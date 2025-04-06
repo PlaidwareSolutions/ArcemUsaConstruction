@@ -37,8 +37,8 @@ const tables = [
 async function clearTable(tableName: string): Promise<void> {
   try {
     console.log(`Clearing table: ${tableName}`);
-    // Using a raw SQL query with CASCADE to handle foreign key constraints
-    await directDb`TRUNCATE TABLE ${directDb(tableName)} CASCADE`;
+    // Delete records without requiring superuser privileges
+    await directDb`DELETE FROM ${directDb(tableName)}`;
     console.log(`✅ Cleared table ${tableName}`);
   } catch (error) {
     console.error(`❌ Error clearing table ${tableName}:`, error);
@@ -255,16 +255,10 @@ async function importAllData(): Promise<void> {
   }
   
   try {
-    // Temporarily disable foreign key checks to allow clearing tables with circular dependencies
-    await directDb`SET session_replication_role = replica`;
-    
-    // Clear each table
-    for (const tableInfo of tables) {
+    // Clear tables in reverse order to handle dependencies
+    for (const tableInfo of [...tables].reverse()) {
       await clearTable(tableInfo.name);
     }
-    
-    // Re-enable foreign key checks
-    await directDb`SET session_replication_role = DEFAULT`;
     
     // Import data into each table
     for (const tableInfo of tables) {
