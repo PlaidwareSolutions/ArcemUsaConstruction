@@ -6,128 +6,74 @@
 
 import { execSync } from 'child_process';
 
-// ANSI color codes for output
-const GREEN = '\x1b[32m';
-const YELLOW = '\x1b[33m';
-const BLUE = '\x1b[34m';
-const RED = '\x1b[31m';
-const RESET = '\x1b[0m';
-const BOLD = '\x1b[1m';
-
-// Print a header
+// Color-coded console output utilities
 function printHeader(text) {
-  console.log(`\n${BOLD}${BLUE}${text}${RESET}\n`);
+  console.log('\n\x1b[1;44;97m ' + text + ' \x1b[0m\n');
 }
 
-// Print a section
 function printSection(text) {
-  console.log(`\n${YELLOW}${text}${RESET}`);
+  console.log('\n\x1b[1;33m=== ' + text + ' ===\x1b[0m');
 }
 
-// Print a success message
 function printSuccess(text) {
-  console.log(`${GREEN}✓ ${text}${RESET}`);
+  console.log('\x1b[32m✓ ' + text + '\x1b[0m');
 }
 
-// Print an info message
 function printInfo(text) {
-  console.log(`${BLUE}ℹ ${text}${RESET}`);
+  console.log('\x1b[36m➜ ' + text + '\x1b[0m');
 }
 
-// Print a warning message
 function printWarning(text) {
-  console.log(`${RED}⚠ ${text}${RESET}`);
+  console.log('\x1b[33m! ' + text + '\x1b[0m');
 }
 
-// Demo header
-printHeader('Database Utility Tools Demo');
-console.log('This script demonstrates the database utility functions available in this project.');
-console.log('The following sections will show the purpose and usage of each utility.');
+// Database tools demonstration
+printHeader('Database Utilities Demonstration');
+printInfo('This script showcases the database utility functions');
+printInfo('It will run in demonstration mode without making changes');
 
-// Export database section
-printSection('1. Database Export');
-console.log('This utility exports all tables from the database to JSON files.');
-console.log(`Files will be saved in the ${BOLD}./database-export${RESET} directory.`);
-console.log('The export process also generates a complete schema SQL file.\n');
+// Schema SQL Generation
+printSection('Schema SQL Generation');
+printInfo('The schema SQL generator creates a complete SQL representation of your database');
+printInfo('Usage: node scripts/run-schema-sql.js');
+printInfo('Output: ./complete-schema.sql');
+printSuccess('SQL includes tables, constraints, indexes, and sequence reset statements');
 
-printInfo('Command to run the export:');
-console.log('  node ./scripts/run-db-export.js\n');
+// Database Export
+printSection('Database Export');
+printInfo('The database export tool saves all table data to JSON files');
+printInfo('Usage: node scripts/run-db-export.js');
+printInfo('Output directory: ./database-export/');
+printSuccess('JSON files are created for each table with consistent naming');
 
-printInfo('What the export process does:');
-console.log('  1. Connects to the database using environment variables');
-console.log('  2. Exports each table to a separate JSON file');
-console.log('  3. Generates a complete SQL schema file');
-console.log('  4. Provides a summary of exported records');
+// Database Import
+printSection('Database Import');
+printWarning('The database import tool is destructive and will clear existing data');
+printInfo('Usage: node scripts/run-db-import.js');
+printInfo('Input directory: ./database-export/');
+printInfo('The import tool includes multiple safeguards:');
+printSuccess('- Requires manual confirmation');
+printSuccess('- Verifies existence of import files');
+printSuccess('- Handles foreign key constraints');
+printSuccess('- Resets sequences after import');
 
-// Export summary section
-printSection('2. Export Summary');
-console.log('This utility shows a summary of the exported database records.');
-console.log('It will display the number of records in each table from the export files.\n');
+// Sequence Reset
+printSection('Sequence Reset');
+printInfo('The sequence reset tool ensures ID sequences match table data');
+printInfo('Usage: node scripts/run-sequence-reset.js');
+printSuccess('Automatically finds and updates all ID sequences');
+printSuccess('Useful after imports or when getting duplicate key errors');
 
-printInfo('Command to view the export summary:');
-console.log('  npx tsx ./scripts/export-summary.js\n');
+// Recommended workflow
+printSection('Recommended Workflow');
+printInfo('1. Export data from source environment');
+printInfo('  → node scripts/run-db-export.js');
+printInfo('2. Copy the database-export directory to target environment');
+printInfo('3. Import data in target environment');
+printInfo('  → node scripts/run-db-import.js');
+printInfo('4. Reset sequences if needed');
+printInfo('  → node scripts/run-sequence-reset.js');
 
-printInfo('Sample output:');
-console.log(`  📊 Database Export Summary
-  =========================
-  blog_categories           |    5 records
-  blog_posts                |    3 records
-  blog_tags                 |   10 records
-  projects                  |    6 records
-  services                  |   12 records
-  =========================
-  Total: 145 records in 20 tables`);
-
-// Schema generation section
-printSection('3. Schema SQL Generation');
-console.log('This utility generates a complete SQL schema file from the database.');
-console.log('The file will contain all CREATE TABLE statements, constraints, and indexes.');
-console.log(`It will be saved as ${BOLD}./complete-schema.sql${RESET}.\n`);
-
-printInfo('Command to generate the schema SQL:');
-console.log('  node ./scripts/run-schema-sql.js\n');
-
-printInfo('What the schema generation process does:');
-console.log('  1. Connects to the database');
-console.log('  2. Retrieves table definitions, constraints, and indexes');
-console.log('  3. Formats them into valid SQL statements');
-console.log('  4. Writes them to the complete-schema.sql file');
-
-// Import database section
-printSection('4. Database Import');
-printWarning('WARNING: The import process deletes all existing data!');
-console.log('The import utility is used to restore data from exported JSON files.\n');
-
-printInfo('Command to run the import:');
-console.log('  node ./scripts/run-db-import.js\n');
-
-printInfo('What the import process does:');
-console.log('  1. Reads JSON files from the ./database-export directory');
-console.log('  2. Prompts for confirmation (multiple times)');
-console.log('  3. Clears all existing data from the database');
-console.log('  4. Imports the data from the JSON files');
-console.log('  5. Shows a summary of imported records\n');
-
-printInfo('Typical use cases:');
-console.log('  - Setting up a new development environment');
-console.log('  - Migrating data between environments');
-console.log('  - Restoring from backups');
-
-// Best practices section
-printSection('Best Practices');
-console.log('1. Run exports regularly to maintain up-to-date backups');
-console.log('2. Use imports only when setting up new environments or for recovery');
-console.log('3. Always verify the export summary before performing imports');
-console.log('4. Keep the exported files in version control for historical tracking');
-console.log('5. Regenerate the schema SQL whenever database structure changes');
-
-// Demo conclusion
-printHeader('Demo Summary');
-console.log('The database utility scripts provide a comprehensive solution for:');
-console.log('  - Data backup and restoration');
-console.log('  - Database schema documentation');
-console.log('  - Development environment setup');
-console.log('  - Migration between environments');
-
-printSuccess('Database utility scripts are ready to use!');
-console.log(`For more details, please refer to ${BOLD}./scripts/README.txt${RESET} and ${BOLD}./database-export/README.md${RESET}`);
+// Finish
+printHeader('End of Demonstration');
+printInfo('For more information, see the README-database-tools.md file');

@@ -1,11 +1,11 @@
--- Complete database schema generated on 2025-04-06T10:26:47.918Z
+-- Complete database schema generated on 2025-04-06T21:41:47.724Z
 
 -- Tables
 CREATE TABLE public.blog_categories (
+  id integer NOT NULL DEFAULT nextval('blog_categories_id_seq'::regclass),
   description text,
   slug text NOT NULL,
   name text NOT NULL,
-  id integer NOT NULL DEFAULT nextval('blog_categories_id_seq'::regclass),
   CONSTRAINT blog_categories_pkey PRIMARY KEY (id, id, id, id)
 );
 
@@ -20,13 +20,13 @@ CREATE TABLE public.blog_gallery (
 );
 
 CREATE TABLE public.blog_post_categories (
-  post_id integer NOT NULL,
-  category_id integer NOT NULL
+  category_id integer NOT NULL,
+  post_id integer NOT NULL
 );
 
 CREATE TABLE public.blog_post_tags (
-  tag_id integer NOT NULL,
-  post_id integer NOT NULL
+  post_id integer NOT NULL,
+  tag_id integer NOT NULL
 );
 
 CREATE TABLE public.blog_posts (
@@ -44,14 +44,15 @@ CREATE TABLE public.blog_posts (
 );
 
 CREATE TABLE public.blog_tags (
+  id integer NOT NULL DEFAULT nextval('blog_tags_id_seq'::regclass),
   slug text NOT NULL,
   name text NOT NULL,
-  id integer NOT NULL DEFAULT nextval('blog_tags_id_seq'::regclass),
   CONSTRAINT blog_tags_pkey PRIMARY KEY (id, id, id)
 );
 
 CREATE TABLE public.job_postings (
-  featured boolean NOT NULL DEFAULT false,
+  created_at timestamp without time zone NOT NULL DEFAULT now(),
+  type text NOT NULL,
   updated_at timestamp without time zone DEFAULT now(),
   salary text,
   active boolean NOT NULL DEFAULT true,
@@ -60,12 +61,11 @@ CREATE TABLE public.job_postings (
   benefits text,
   responsibilities text NOT NULL,
   department text NOT NULL,
-  created_at timestamp without time zone NOT NULL DEFAULT now(),
+  featured boolean NOT NULL DEFAULT false,
   id integer NOT NULL DEFAULT nextval('job_postings_id_seq'::regclass),
   location text NOT NULL,
   description text NOT NULL,
   requirements text NOT NULL,
-  type text NOT NULL,
   CONSTRAINT job_postings_pkey PRIMARY KEY (id, id, id, id, id, id, id, id, id, id, id, id, id, id, id)
 );
 
@@ -102,9 +102,10 @@ CREATE TABLE public.project_gallery (
 );
 
 CREATE TABLE public.projects (
-  featured boolean DEFAULT false,
-  image text NOT NULL,
   location text,
+  completion_date text,
+  image text NOT NULL,
+  featured boolean DEFAULT false,
   overview text,
   size text,
   category text NOT NULL,
@@ -117,7 +118,6 @@ CREATE TABLE public.projects (
   title text NOT NULL,
   client text,
   solutions text,
-  completion_date text,
   CONSTRAINT projects_pkey PRIMARY KEY (id, id, id, id, id, id, id, id, id, id, id, id, id, id, id, id)
 );
 
@@ -155,9 +155,10 @@ CREATE TABLE public.service_gallery (
   "order" integer DEFAULT 0,
   service_id integer NOT NULL,
   id integer NOT NULL DEFAULT nextval('service_gallery_id_seq'::regclass),
+  caption text,
   image_url text NOT NULL,
   created_at timestamp without time zone DEFAULT now(),
-  CONSTRAINT service_gallery_pkey PRIMARY KEY (id, id, id, id, id, id)
+  CONSTRAINT service_gallery_pkey PRIMARY KEY (id, id, id, id, id, id, id)
 );
 
 CREATE TABLE public.services (
@@ -266,3 +267,41 @@ ALTER TABLE public.quote_request_attachments ADD CONSTRAINT quote_request_attach
 
 -- Indexes
 CREATE INDEX "IDX_session_expire" ON public.session CREATE INDEX "IDX_session_expire" ON public.session USING btree (expire);
+
+-- Sequence Reset Statements (Run after importing data)
+-- Reset sequence for table blog_categories
+SELECT setval('public.blog_categories_id_seq', COALESCE((SELECT MAX(id) FROM blog_categories), 0) + 1, false);
+-- Reset sequence for table blog_gallery
+SELECT setval('public.blog_gallery_id_seq', COALESCE((SELECT MAX(id) FROM blog_gallery), 0) + 1, false);
+-- Reset sequence for table blog_posts
+SELECT setval('public.blog_posts_id_seq', COALESCE((SELECT MAX(id) FROM blog_posts), 0) + 1, false);
+-- Reset sequence for table blog_tags
+SELECT setval('public.blog_tags_id_seq', COALESCE((SELECT MAX(id) FROM blog_tags), 0) + 1, false);
+-- Reset sequence for table job_postings
+SELECT setval('public.job_postings_id_seq', COALESCE((SELECT MAX(id) FROM job_postings), 0) + 1, false);
+-- Reset sequence for table messages
+SELECT setval('public.messages_id_seq', COALESCE((SELECT MAX(id) FROM messages), 0) + 1, false);
+-- Reset sequence for table newsletter_subscribers
+SELECT setval('public.newsletter_subscribers_id_seq', COALESCE((SELECT MAX(id) FROM newsletter_subscribers), 0) + 1, false);
+-- Reset sequence for table project_gallery
+SELECT setval('public.project_gallery_id_seq', COALESCE((SELECT MAX(id) FROM project_gallery), 0) + 1, false);
+-- Reset sequence for table projects
+SELECT setval('public.projects_id_seq', COALESCE((SELECT MAX(id) FROM projects), 0) + 1, false);
+-- Reset sequence for table quote_request_attachments
+SELECT setval('public.quote_request_attachments_id_seq', COALESCE((SELECT MAX(id) FROM quote_request_attachments), 0) + 1, false);
+-- Reset sequence for table quote_requests
+SELECT setval('public.quote_requests_id_seq', COALESCE((SELECT MAX(id) FROM quote_requests), 0) + 1, false);
+-- Reset sequence for table service_gallery
+SELECT setval('public.service_gallery_id_seq', COALESCE((SELECT MAX(id) FROM service_gallery), 0) + 1, false);
+-- Reset sequence for table services
+SELECT setval('public.services_id_seq', COALESCE((SELECT MAX(id) FROM services), 0) + 1, false);
+-- Reset sequence for table subcontractors
+SELECT setval('public.subcontractors_id_seq', COALESCE((SELECT MAX(id) FROM subcontractors), 0) + 1, false);
+-- Reset sequence for table team_members
+SELECT setval('public.team_members_id_seq', COALESCE((SELECT MAX(id) FROM team_members), 0) + 1, false);
+-- Reset sequence for table testimonials
+SELECT setval('public.testimonials_id_seq', COALESCE((SELECT MAX(id) FROM testimonials), 0) + 1, false);
+-- Reset sequence for table users
+SELECT setval('public.users_id_seq', COALESCE((SELECT MAX(id) FROM users), 0) + 1, false);
+-- Reset sequence for table vendors
+SELECT setval('public.vendors_id_seq', COALESCE((SELECT MAX(id) FROM vendors), 0) + 1, false);

@@ -9,60 +9,80 @@ import path from 'path';
 
 const EXPORT_DIR = './database-export';
 
-// Check if export directory exists
-if (!fs.existsSync(EXPORT_DIR)) {
-  console.error(`Export directory ${EXPORT_DIR} does not exist.`);
-  process.exit(1);
+// ANSI color codes for formatting
+const COLORS = {
+  RESET: '\x1b[0m',
+  BOLD: '\x1b[1m',
+  DIM: '\x1b[2m',
+  BLUE: '\x1b[34m',
+  GREEN: '\x1b[32m',
+  YELLOW: '\x1b[33m',
+  CYAN: '\x1b[36m',
+  WHITE: '\x1b[37m',
+  BG_BLUE: '\x1b[44m',
+};
+
+function formatFileSize(bytes) {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
-// Get list of exported files
-const files = fs.readdirSync(EXPORT_DIR).filter(file => file.endsWith('.json'));
-
-if (files.length === 0) {
-  console.error(`No JSON files found in ${EXPORT_DIR}.`);
-  process.exit(1);
-}
-
-console.log('📊 Database Export Summary');
-console.log('=========================');
-
-let totalRecords = 0;
-
-// Sort files alphabetically
-files.sort();
-
-// Build a summary table
-const summaryData = files.map(file => {
-  const filePath = path.join(EXPORT_DIR, file);
-  const tableName = file.replace('.json', '');
-  const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-  const recordCount = data.length;
-  totalRecords += recordCount;
+function getSummary() {
+  console.log(`${COLORS.BG_BLUE}${COLORS.WHITE}${COLORS.BOLD} Database Export Summary ${COLORS.RESET}\n`);
   
-  return {
-    table: tableName,
-    count: recordCount
-  };
-});
-
-// Find the longest table name for nice formatting
-const maxTableLength = Math.max(...summaryData.map(item => item.table.length));
-
-// Print the summary
-summaryData.forEach(item => {
-  const paddedName = item.table.padEnd(maxTableLength);
-  const countStr = String(item.count).padStart(4);
-  console.log(`${paddedName} | ${countStr} records`);
-});
-
-console.log('=========================');
-console.log(`Total: ${totalRecords} records in ${files.length} tables`);
-
-// Print file with the schema SQL
-if (fs.existsSync('./complete-schema.sql')) {
-  const stats = fs.statSync('./complete-schema.sql');
-  const size = (stats.size / 1024).toFixed(2);
-  console.log(`\nComplete SQL schema: ${size} KB`);
-} else {
-  console.log('\nComplete SQL schema file not found.');
+  if (!fs.existsSync(EXPORT_DIR)) {
+    console.log(`${COLORS.YELLOW}Export directory not found: ${EXPORT_DIR}${COLORS.RESET}`);
+    return;
+  }
+  
+  const files = fs.readdirSync(EXPORT_DIR).filter(file => file.endsWith('.json'));
+  
+  if (files.length === 0) {
+    console.log(`${COLORS.YELLOW}No export files found in ${EXPORT_DIR}${COLORS.RESET}`);
+    return;
+  }
+  
+  console.log(`${COLORS.CYAN}Found ${files.length} export files in ${EXPORT_DIR}${COLORS.RESET}\n`);
+  
+  // Sort files by table name (alphabetically)
+  files.sort();
+  
+  // Calculate the total size of all export files
+  let totalSize = 0;
+  let totalRecords = 0;
+  
+  console.log(`${COLORS.BOLD}Table Name               Records    File Size${COLORS.RESET}`);
+  console.log(`${COLORS.DIM}----------------------------------------${COLORS.RESET}`);
+  
+  files.forEach(file => {
+    const filePath = path.join(EXPORT_DIR, file);
+    const stats = fs.statSync(filePath);
+    const fileSize = stats.size;
+    totalSize += fileSize;
+    
+    // Read the file to count records
+    const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    const recordCount = Array.isArray(data) ? data.length : 0;
+    totalRecords += recordCount;
+    
+    // Format the table name (remove .json extension)
+    const tableName = file.replace('.json', '');
+    
+    // Add padding to align columns
+    const paddedTableName = tableName.padEnd(24);
+    const paddedRecordCount = recordCount.toString().padEnd(10);
+    
+    console.log(`${paddedTableName} ${paddedRecordCount} ${formatFileSize(fileSize)}`);
+  });
+  
+  console.log(`${COLORS.DIM}----------------------------------------${COLORS.RESET}`);
+  console.log(`${COLORS.BOLD}Total                     ${totalRecords.toString().padEnd(10)} ${formatFileSize(totalSize)}${COLORS.RESET}\n`);
+  
+  console.log(`${COLORS.GREEN}Export date: ${new Date().toLocaleString()}${COLORS.RESET}`);
 }
+
+// Run the summary function
+getSummary();

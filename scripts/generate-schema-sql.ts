@@ -78,10 +78,28 @@ async function generateSchemaSql(): Promise<void> {
         n.nspname, t.relname, i.relname;
     `;
     
+    // Query to get sequence information and current values
+    const sequenceQuery = `
+      SELECT 
+        'SELECT setval(' || quote_literal(quote_ident(n.nspname) || '.' || quote_ident(c.relname)) ||
+        ', COALESCE((SELECT MAX(id) FROM ' || quote_ident(t.relname) || '), 0) + 1, false);' as sequence_script,
+        c.relname as sequence_name,
+        t.relname as table_name
+      FROM pg_class c
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+      JOIN pg_depend d ON d.objid = c.oid
+      JOIN pg_class t ON t.oid = d.refobjid
+      JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = d.refobjsubid
+      WHERE c.relkind = 'S'
+      AND n.nspname = 'public'
+      ORDER BY t.relname, c.relname;
+    `;
+    
     // Execute the queries
     const tableRows = await directDb.unsafe(schemaQuery);
     const fkRows = await directDb.unsafe(foreignKeyQuery);
     const indexRows = await directDb.unsafe(indexQuery);
+    const sequenceRows = await directDb.unsafe(sequenceQuery);
     
     // Combine all scripts
     let sqlScript = '-- Complete database schema generated on ' + new Date().toISOString() + '\n\n';
@@ -99,6 +117,13 @@ async function generateSchemaSql(): Promise<void> {
     sqlScript += '-- Indexes\n';
     indexRows.forEach((row: any) => {
       sqlScript += row.create_index_script + '\n';
+    });
+    sqlScript += '\n';
+    
+    sqlScript += '-- Sequence Reset Statements (Run after importing data)\n';
+    sequenceRows.forEach((row: any) => {
+      sqlScript += `-- Reset sequence for table ${row.table_name}\n`;
+      sqlScript += row.sequence_script + '\n';
     });
     
     // Write the SQL script to a file

@@ -167,6 +167,59 @@ async function getUserConfirmation(message: string): Promise<boolean> {
   });
 }
 
+/**
+ * Reset sequence values for all tables with ID columns
+ * This ensures that auto-incrementing ID values start at the correct value
+ * after importing data
+ */
+async function resetSequences(): Promise<void> {
+  console.log('\nResetting sequence values for all tables...');
+  
+  try {
+    // Get all tables that have an 'id' column with a sequence
+    const sequencesQuery = `
+      SELECT 
+        t.relname as table_name,
+        a.attname as column_name,
+        s.relname as sequence_name
+      FROM pg_class t
+      JOIN pg_attribute a ON a.attrelid = t.oid
+      JOIN pg_namespace n ON n.oid = t.relnamespace
+      JOIN pg_depend d ON d.refobjid = t.oid AND d.refobjsubid = a.attnum
+      JOIN pg_class s ON s.oid = d.objid AND s.relkind = 'S'
+      WHERE n.nspname = 'public'
+      AND t.relkind = 'r'
+      AND a.attname = 'id'
+    `;
+    
+    const sequences = await directDb.unsafe(sequencesQuery);
+    
+    for (const seq of sequences) {
+      const { table_name, sequence_name } = seq;
+      
+      try {
+        // Update the sequence to the max ID value + 1
+        const updateQuery = `
+          SELECT setval(
+            pg_get_serial_sequence('${table_name}', 'id'),
+            COALESCE((SELECT MAX(id) FROM ${table_name}), 0) + 1,
+            false
+          )
+        `;
+        
+        await directDb.unsafe(updateQuery);
+        console.log(`✅ Reset sequence for table ${table_name}`);
+      } catch (error) {
+        console.error(`❌ Error resetting sequence for table ${table_name}:`, error);
+      }
+    }
+    
+    console.log('✅ All sequences reset successfully');
+  } catch (error) {
+    console.error('❌ Error fetching sequences:', error);
+  }
+}
+
 async function importAllData(): Promise<void> {
   console.log('Starting database import process...');
   
@@ -217,6 +270,9 @@ async function importAllData(): Promise<void> {
     for (const tableInfo of tables) {
       await importTable(tableInfo.name, tableInfo.table, tableInfo.useRawImport);
     }
+    
+    // Reset sequences for all tables with ID columns
+    await resetSequences();
     
     console.log('\nImport completed successfully!');
   } catch (error) {
