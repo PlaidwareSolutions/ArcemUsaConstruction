@@ -81,6 +81,19 @@ async function importTable(tableName: string, table: any, useRawImport: boolean 
     // Insert the records into the table
     if (records.length > 0) {
       try {
+        // Filter out records with invalid foreign keys
+        if (tableName === 'blog_post_categories') {
+          // Get valid blog post IDs
+          const validPostIds = await directDb`SELECT id FROM blog_posts`;
+          records = records.filter(record => 
+            validPostIds.some(post => post.id === record.post_id)
+          );
+          if (records.length === 0) {
+            console.log('⚠️ No valid records found after foreign key filtering');
+            return;
+          }
+        }
+
         if (useRawImport) {
           // Use raw SQL for tables with schema mismatches
           console.log(`Using raw SQL import for ${tableName} due to schema mismatch`);
