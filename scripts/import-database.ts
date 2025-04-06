@@ -60,13 +60,19 @@ async function importTable(tableName: string, table: any, useRawImport: boolean 
     const rawData = fs.readFileSync(filePath, 'utf8');
     let records = JSON.parse(rawData);
     
-    // Convert date strings to Date objects
+    // Convert date strings to Date objects and handle special timestamp fields
     records = records.map(record => {
       const newRecord = { ...record };
       for (const key in newRecord) {
         if (typeof newRecord[key] === 'string' && newRecord[key].match(/^\d{4}-\d{2}-\d{2}/)) {
           newRecord[key] = new Date(newRecord[key]);
         }
+      }
+      // Handle job_postings timestamps
+      if (tableName === 'job_postings') {
+        const now = new Date();
+        newRecord.createdAt = newRecord.createdAt || now;
+        newRecord.updatedAt = newRecord.updatedAt || now;
       }
       return newRecord;
     });
