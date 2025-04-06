@@ -588,21 +588,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[DEBUG] Found ${allPosts.length} total blog posts`);
       
-      // Transform the posts to ensure consistent property naming
-      const transformedPosts = allPosts.map(post => {
-        // Convert snake_case properties to camelCase
-        return {
-          ...post,
-          // Add createdAt property for frontend compatibility
-          createdAt: post.created_at
-        };
-      });
-      
-      if (transformedPosts.length > 0) {
-        console.log("[DEBUG] Sample admin post:", transformedPosts[0]);
+      if (allPosts.length > 0) {
+        console.log("[DEBUG] Sample admin post:", allPosts[0]);
       }
       
-      res.json(transformedPosts);
+      res.json(allPosts);
     } catch (error) {
       console.error("[ERROR] Failed to fetch all blog posts:", error);
       res.status(500).json({ message: "Failed to fetch blog posts" });

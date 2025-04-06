@@ -1,0 +1,38 @@
+[
+  {
+    "id": 3,
+    "title": "How Technology is Transforming the Construction Industry",
+    "slug": "technology-transforming-construction",
+    "content": "From BIM to drones and AI, discover how technological innovations are revolutionizing construction processes and outcomes...",
+    "excerpt": "From BIM to drones and AI, discover how technological innovations are revolutionizing construction processes and outcomes.",
+    "image": "https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80",
+    "author": "Robert Chen",
+    "published": true,
+    "createdAt": "2025-03-07T12:14:17.483Z",
+    "category": "Technology"
+  },
+  {
+    "id": 1,
+    "title": "7 Sustainable Building Practices for Modern Construction",
+    "slug": "sustainable-building-practices",
+    "content": "Discover the latest sustainable building methods that are transforming the construction industry and reducing environmental impact...",
+    "excerpt": "Discover the latest sustainable building methods that are transforming the construction industry and reducing environmental impact.",
+    "image": "https://images.unsplash.com/photo-1503387762-592deb58ef4e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1471&q=80",
+    "author": "John Smith",
+    "published": true,
+    "createdAt": "2025-03-07T12:14:17.483Z",
+    "category": "Construction"
+  },
+  {
+    "id": 2,
+    "title": "The Evolution of Architectural Design in Commercial Buildings",
+    "slug": "evolution-architectural-design",
+    "content": "Explore how commercial architecture has evolved over the decades and what trends are shaping the future of building design...",
+    "excerpt": "Explore how commercial architecture has evolved over the decades and what trends are shaping the future of building design.",
+    "image": "https://images.unsplash.com/photo-1531834685032-c34bf0d84c77?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1074&q=80",
+    "author": "Emma Johnson",
+    "published": true,
+    "createdAt": "2025-03-07T12:14:17.483Z",
+    "category": "Architecture"
+  }
+]

@@ -1,0 +1,80 @@
+[
+  {
+    "id": 10,
+    "name": "Shezad M. Saleem",
+    "designation": "On-Site PMO, Compliance Supervisory",
+    "qualification": "B.CA",
+    "gender": "male",
+    "photo": "",
+    "bio": "",
+    "order": 6,
+    "active": true,
+    "createdAt": "2025-03-26T17:53:46.283Z",
+    "updatedAt": "2025-03-26T18:27:35.595Z"
+  },
+  {
+    "id": 4,
+    "name": "M. Shehryar",
+    "designation": "Architect & Interior Designer",
+    "qualification": "B.Arch",
+    "gender": "male",
+    "photo": "/uploads/images/team/placeholder-person.jpg",
+    "bio": "",
+    "order": 5,
+    "active": true,
+    "createdAt": "2025-03-14T05:13:02.092Z",
+    "updatedAt": "2025-03-26T18:30:27.212Z"
+  },
+  {
+    "id": 11,
+    "name": "Zayne Mughal",
+    "designation": "Head - Accounts & Procurement",
+    "qualification": "M.Com (Acc. & Finance)",
+    "gender": "male",
+    "photo": "",
+    "bio": "",
+    "order": 4,
+    "active": true,
+    "createdAt": "2025-03-26T18:04:35.057Z",
+    "updatedAt": "2025-03-26T18:30:40.431Z"
+  },
+  {
+    "id": 1,
+    "name": "Aamir (AJ) Qadri",
+    "designation": "President, CEO",
+    "qualification": "CDCM, CQM-C",
+    "gender": "male",
+    "photo": "/uploads/images/team/placeholder-person.jpg",
+    "bio": "",
+    "order": 1,
+    "active": true,
+    "createdAt": "2025-03-14T05:13:02.092Z",
+    "updatedAt": "2025-03-26T18:26:17.587Z"
+  },
+  {
+    "id": 2,
+    "name": "Nadia Khalid",
+    "designation": "V. President, CFO",
+    "qualification": "MBA. (HRM & Marketing)",
+    "gender": "female",
+    "photo": "/uploads/images/team/placeholder-person.jpg",
+    "bio": "",
+    "order": 2,
+    "active": true,
+    "createdAt": "2025-03-14T05:13:02.092Z",
+    "updatedAt": "2025-03-26T18:26:20.976Z"
+  },
+  {
+    "id": 3,
+    "name": "Ahmad Mujtaba (AK)",
+    "designation": "Head - Administration  & Project Management.",
+    "qualification": "BBA. (Business & Finance)",
+    "gender": "male",
+    "photo": "/uploads/images/team/placeholder-person.jpg",
+    "bio": "",
+    "order": 3,
+    "active": true,
+    "createdAt": "2025-03-14T05:13:02.092Z",
+    "updatedAt": "2025-03-26T18:26:38.734Z"
+  }
+]

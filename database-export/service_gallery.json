@@ -1,0 +1,250 @@
+[
+  {
+    "id": 111,
+    "service_id": 16,
+    "image_url": "/uploads/services/services.jpg",
+    "alt": "Residential Construction services by ARCEMUSA",
+    "order": 0,
+    "created_at": "2025-04-04T21:15:43.680Z"
+  },
+  {
+    "id": 112,
+    "service_id": 17,
+    "image_url": "/uploads/services/services.jpg",
+    "alt": "Commercial Construction services by ARCEMUSA",
+    "order": 0,
+    "created_at": "2025-04-04T21:15:43.940Z"
+  },
+  {
+    "id": 113,
+    "service_id": 18,
+    "image_url": "/uploads/services/services.jpg",
+    "alt": "Renovation & Remodeling services by ARCEMUSA",
+    "order": 0,
+    "created_at": "2025-04-04T21:15:44.202Z"
+  },
+  {
+    "id": 114,
+    "service_id": 19,
+    "image_url": "/uploads/services/services.jpg",
+    "alt": "Construction Management services by ARCEMUSA",
+    "order": 0,
+    "created_at": "2025-04-04T21:15:44.461Z"
+  },
+  {
+    "id": 115,
+    "service_id": 20,
+    "image_url": "/uploads/services/services.jpg",
+    "alt": "Industrial Construction services by ARCEMUSA",
+    "order": 0,
+    "created_at": "2025-04-04T21:15:44.720Z"
+  },
+  {
+    "id": 116,
+    "service_id": 21,
+    "image_url": "/uploads/services/services.jpg",
+    "alt": "Mechanical, Electrical & Plumbing services by ARCEMUSA",
+    "order": 0,
+    "created_at": "2025-04-04T21:15:44.978Z"
+  },
+  {
+    "id": 117,
+    "service_id": 22,
+    "image_url": "/uploads/services/services.jpg",
+    "alt": "Civil Engineering services by ARCEMUSA",
+    "order": 0,
+    "created_at": "2025-04-04T21:15:45.236Z"
+  },
+  {
+    "id": 118,
+    "service_id": 23,
+    "image_url": "/uploads/services/services.jpg",
+    "alt": "Sustainable Construction services by ARCEMUSA",
+    "order": 0,
+    "created_at": "2025-04-04T21:15:45.494Z"
+  },
+  {
+    "id": 119,
+    "service_id": 24,
+    "image_url": "/uploads/services/services.jpg",
+    "alt": "Project Consulting services by ARCEMUSA",
+    "order": 0,
+    "created_at": "2025-04-04T21:15:45.753Z"
+  },
+  {
+    "id": 120,
+    "service_id": 25,
+    "image_url": "/uploads/services/services.jpg",
+    "alt": "Real Estate Development services by ARCEMUSA",
+    "order": 0,
+    "created_at": "2025-04-04T21:15:46.011Z"
+  },
+  {
+    "id": 125,
+    "service_id": 16,
+    "image_url": "/uploads/services/construction-projects.jpg",
+    "alt": "Residential Construction construction projects by ARCEMUSA",
+    "order": 1,
+    "created_at": "2025-04-04T21:16:50.527Z"
+  },
+  {
+    "id": 126,
+    "service_id": 16,
+    "image_url": "/uploads/services/our-passion-led-us-here.jpg",
+    "alt": "Residential Construction passion-driven services by ARCEMUSA",
+    "order": 2,
+    "created_at": "2025-04-04T21:16:50.786Z"
+  },
+  {
+    "id": 127,
+    "service_id": 17,
+    "image_url": "/uploads/services/construction-projects.jpg",
+    "alt": "Commercial Construction construction projects by ARCEMUSA",
+    "order": 1,
+    "created_at": "2025-04-04T21:16:51.046Z"
+  },
+  {
+    "id": 128,
+    "service_id": 17,
+    "image_url": "/uploads/services/our-passion-led-us-here.jpg",
+    "alt": "Commercial Construction passion-driven services by ARCEMUSA",
+    "order": 2,
+    "created_at": "2025-04-04T21:16:51.307Z"
+  },
+  {
+    "id": 129,
+    "service_id": 18,
+    "image_url": "/uploads/services/construction-projects.jpg",
+    "alt": "Renovation & Remodeling construction projects by ARCEMUSA",
+    "order": 1,
+    "created_at": "2025-04-04T21:16:51.566Z"
+  },
+  {
+    "id": 130,
+    "service_id": 18,
+    "image_url": "/uploads/services/our-passion-led-us-here.jpg",
+    "alt": "Renovation & Remodeling passion-driven services by ARCEMUSA",
+    "order": 2,
+    "created_at": "2025-04-04T21:16:51.828Z"
+  },
+  {
+    "id": 131,
+    "service_id": 19,
+    "image_url": "/uploads/services/construction-projects.jpg",
+    "alt": "Construction Management construction projects by ARCEMUSA",
+    "order": 1,
+    "created_at": "2025-04-04T21:16:52.087Z"
+  },
+  {
+    "id": 132,
+    "service_id": 19,
+    "image_url": "/uploads/services/our-passion-led-us-here.jpg",
+    "alt": "Construction Management passion-driven services by ARCEMUSA",
+    "order": 2,
+    "created_at": "2025-04-04T21:16:52.346Z"
+  },
+  {
+    "id": 133,
+    "service_id": 20,
+    "image_url": "/uploads/services/construction-projects.jpg",
+    "alt": "Industrial Construction construction projects by ARCEMUSA",
+    "order": 1,
+    "created_at": "2025-04-04T21:16:52.604Z"
+  },
+  {
+    "id": 134,
+    "service_id": 20,
+    "image_url": "/uploads/services/our-passion-led-us-here.jpg",
+    "alt": "Industrial Construction passion-driven services by ARCEMUSA",
+    "order": 2,
+    "created_at": "2025-04-04T21:16:52.863Z"
+  },
+  {
+    "id": 135,
+    "service_id": 21,
+    "image_url": "/uploads/services/construction-projects.jpg",
+    "alt": "Mechanical, Electrical & Plumbing construction projects by ARCEMUSA",
+    "order": 1,
+    "created_at": "2025-04-04T21:16:53.122Z"
+  },
+  {
+    "id": 136,
+    "service_id": 21,
+    "image_url": "/uploads/services/our-passion-led-us-here.jpg",
+    "alt": "Mechanical, Electrical & Plumbing passion-driven services by ARCEMUSA",
+    "order": 2,
+    "created_at": "2025-04-04T21:16:53.381Z"
+  },
+  {
+    "id": 137,
+    "service_id": 22,
+    "image_url": "/uploads/services/construction-projects.jpg",
+    "alt": "Civil Engineering construction projects by ARCEMUSA",
+    "order": 1,
+    "created_at": "2025-04-04T21:16:53.641Z"
+  },
+  {
+    "id": 138,
+    "service_id": 22,
+    "image_url": "/uploads/services/our-passion-led-us-here.jpg",
+    "alt": "Civil Engineering passion-driven services by ARCEMUSA",
+    "order": 2,
+    "created_at": "2025-04-04T21:16:53.900Z"
+  },
+  {
+    "id": 139,
+    "service_id": 23,
+    "image_url": "/uploads/services/construction-projects.jpg",
+    "alt": "Sustainable Construction construction projects by ARCEMUSA",
+    "order": 1,
+    "created_at": "2025-04-04T21:16:54.160Z"
+  },
+  {
+    "id": 140,
+    "service_id": 23,
+    "image_url": "/uploads/services/our-passion-led-us-here.jpg",
+    "alt": "Sustainable Construction passion-driven services by ARCEMUSA",
+    "order": 2,
+    "created_at": "2025-04-04T21:16:54.418Z"
+  },
+  {
+    "id": 141,
+    "service_id": 24,
+    "image_url": "/uploads/services/construction-projects.jpg",
+    "alt": "Project Consulting construction projects by ARCEMUSA",
+    "order": 1,
+    "created_at": "2025-04-04T21:16:54.677Z"
+  },
+  {
+    "id": 142,
+    "service_id": 24,
+    "image_url": "/uploads/services/our-passion-led-us-here.jpg",
+    "alt": "Project Consulting passion-driven services by ARCEMUSA",
+    "order": 2,
+    "created_at": "2025-04-04T21:16:54.936Z"
+  },
+  {
+    "id": 143,
+    "service_id": 25,
+    "image_url": "/uploads/services/construction-projects.jpg",
+    "alt": "Real Estate Development construction projects by ARCEMUSA",
+    "order": 1,
+    "created_at": "2025-04-04T21:16:55.194Z"
+  },
+  {
+    "id": 144,
+    "service_id": 25,
+    "image_url": "/uploads/services/our-passion-led-us-here.jpg",
+    "alt": "Real Estate Development passion-driven services by ARCEMUSA",
+    "order": 2,
+    "created_at": "2025-04-04T21:16:55.455Z"
+  },
+  {
+    "id": 146,
+    "service_id": 14,
+    "image_url": "",
+    "alt": "Gallery image 1",
+    "order": 1,
+    "created_at": "2025-04-04T21:41:40.331Z"
+  }
+]

@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "name": "Construction",
+    "slug": "construction",
+    "description": "Articles about construction techniques, trends, and case studies"
+  },
+  {
+    "id": 2,
+    "name": "Renovation",
+    "slug": "renovation",
+    "description": "Articles about renovation projects and home improvement"
+  },
+  {
+    "id": 3,
+    "name": "Architecture",
+    "slug": "architecture",
+    "description": "Articles about architectural design and concepts"
+  },
+  {
+    "id": 4,
+    "name": "Sustainability",
+    "slug": "sustainability",
+    "description": "Articles about sustainable and eco-friendly building practices"
+  },
+  {
+    "id": 5,
+    "name": "Industry News",
+    "slug": "industry-news",
+    "description": "Latest news and updates from the construction industry"
+  }
+]

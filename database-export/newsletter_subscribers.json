@@ -1,0 +1,18 @@
+[
+  {
+    "id": 1,
+    "email": "test@example.com",
+    "first_name": "Test",
+    "last_name": "User",
+    "subscribed": true,
+    "created_at": "2025-03-08T09:31:44.802Z"
+  },
+  {
+    "id": 2,
+    "email": "kfnawaz@gmail.com",
+    "first_name": "",
+    "last_name": "",
+    "subscribed": true,
+    "created_at": "2025-03-08T10:00:04.015Z"
+  }
+]

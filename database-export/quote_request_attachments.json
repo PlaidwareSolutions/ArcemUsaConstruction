@@ -1,0 +1,22 @@
+[
+  {
+    "id": 1,
+    "quoteRequestId": 7,
+    "fileName": "f47eec8c-f347-449c-b9f1-e408614562fa copy.jpeg",
+    "fileUrl": "https://utfs.io/f/PFuaKVnX18hbA4ZXYjVSGC30jWHrqkRzialsn18IwyDL6NMU",
+    "fileKey": "PFuaKVnX18hbA4ZXYjVSGC30jWHrqkRzialsn18IwyDL6NMU",
+    "fileSize": 338187,
+    "fileType": "jpeg",
+    "createdAt": "2025-04-05T00:44:17.688Z"
+  },
+  {
+    "id": 2,
+    "quoteRequestId": 7,
+    "fileName": "20250108-statements-5259-.pdf",
+    "fileUrl": "https://utfs.io/f/PFuaKVnX18hbvJTy1EBK2TgpdhPU6AjyFnXRQ5a84vDOJ0WZ",
+    "fileKey": "PFuaKVnX18hbvJTy1EBK2TgpdhPU6AjyFnXRQ5a84vDOJ0WZ",
+    "fileSize": 208471,
+    "fileType": "pdf",
+    "createdAt": "2025-04-05T00:44:17.820Z"
+  }
+]

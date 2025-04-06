@@ -1,0 +1,52 @@
+[
+  {
+    "id": 1,
+    "name": "Residential",
+    "slug": "residential"
+  },
+  {
+    "id": 2,
+    "name": "Commercial",
+    "slug": "commercial"
+  },
+  {
+    "id": 3,
+    "name": "Green Building",
+    "slug": "green-building"
+  },
+  {
+    "id": 4,
+    "name": "Interior Design",
+    "slug": "interior-design"
+  },
+  {
+    "id": 5,
+    "name": "Project Management",
+    "slug": "project-management"
+  },
+  {
+    "id": 6,
+    "name": "Building Materials",
+    "slug": "building-materials"
+  },
+  {
+    "id": 7,
+    "name": "Safety",
+    "slug": "safety"
+  },
+  {
+    "id": 8,
+    "name": "Technology",
+    "slug": "technology"
+  },
+  {
+    "id": 9,
+    "name": "Cost Efficiency",
+    "slug": "cost-efficiency"
+  },
+  {
+    "id": 10,
+    "name": "Design Trends",
+    "slug": "design-trends"
+  }
+]
