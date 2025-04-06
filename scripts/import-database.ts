@@ -58,7 +58,18 @@ async function importTable(tableName: string, table: any, useRawImport: boolean 
     
     // Read the data from the JSON file
     const rawData = fs.readFileSync(filePath, 'utf8');
-    const records = JSON.parse(rawData);
+    let records = JSON.parse(rawData);
+    
+    // Convert date strings to Date objects
+    records = records.map(record => {
+      const newRecord = { ...record };
+      for (const key in newRecord) {
+        if (typeof newRecord[key] === 'string' && newRecord[key].match(/^\d{4}-\d{2}-\d{2}/)) {
+          newRecord[key] = new Date(newRecord[key]);
+        }
+      }
+      return newRecord;
+    });
     
     if (!records.length) {
       console.log(`⚠️ No records found for ${tableName}, skipping.`);
