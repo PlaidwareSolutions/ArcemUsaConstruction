@@ -6,6 +6,7 @@ import { initializeRevealEffects, scrollToTop, formatDate } from '@/lib/utils';
 import { ArrowLeft, Calendar, Tag, User, ChevronLeft, ChevronRight, Image as ImageIcon, X } from 'lucide-react';
 import BlogPostSeo from '@/components/seo/BlogPostSeo';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { 
   Dialog, 
   DialogContent, 
@@ -13,6 +14,71 @@ import {
   DialogHeader,
   DialogFooter
 } from '@/components/ui/dialog';
+
+// Category interface
+interface Category {
+  id: number;
+  name: string;
+  slug: string;
+}
+
+// Separate component for categories to avoid React hooks rule violations
+interface CategoryListProps {
+  postId: number;
+}
+
+const CategoryList = ({ postId }: CategoryListProps) => {
+  const { data: categories = [] } = useQuery<Category[]>({
+    queryKey: [`/api/blog/${postId}/categories`],
+    enabled: !!postId,
+  });
+  
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {categories && categories.length > 0 ? (
+        categories.map((cat) => (
+          <Badge key={cat.id} variant="outline" className="text-xs font-medium px-3 py-1 border-gray-300">
+            {cat.name}
+          </Badge>
+        ))
+      ) : (
+        <span className="text-xs text-gray-500">Uncategorized</span>
+      )}
+    </div>
+  );
+};
+
+// Tag interface
+interface Tag {
+  id: number;
+  name: string;
+  slug: string;
+}
+
+// Separate component for tags to avoid React hooks rule violations
+interface TagListProps {
+  postId: number;
+}
+
+const TagList = ({ postId }: TagListProps) => {
+  const { data: tags = [] } = useQuery<Tag[]>({
+    queryKey: [`/api/blog/${postId}/tags`],
+    enabled: !!postId,
+  });
+  
+  return tags && tags.length > 0 ? (
+    <div className="mt-8">
+      <h4 className="text-sm font-semibold text-gray-600 mb-3 tracking-wide uppercase">TAGS</h4>
+      <div className="flex flex-wrap gap-1.5">
+        {tags.map((tag) => (
+          <span key={tag.id} className="text-xs text-gray-600 bg-gray-100 px-3 py-1 rounded-full font-medium">
+            #{tag.name}
+          </span>
+        ))}
+      </div>
+    </div>
+  ) : null;
+};
 import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay';
 
@@ -48,7 +114,7 @@ const BlogPost = () => {
 
   useEffect(() => {
     scrollToTop();
-    const cleanup = initializeRevealEffects();
+    const cleanup = initializeRevealEffects(true);
     return cleanup;
   }, [slug]);
 
@@ -58,8 +124,14 @@ const BlogPost = () => {
   });
   
   // Fetch blog post gallery images
-  const { data: galleryImages, isLoading: isLoadingGallery } = useQuery<BlogGallery[]>({
+  const { data: galleryImages = [], isLoading: isLoadingGallery } = useQuery<BlogGallery[]>({
     queryKey: [`/api/blog/${post?.id}/gallery`],
+    enabled: !!post?.id,
+  });
+  
+  // Fetch related blog posts
+  const { data: relatedPosts = [], isLoading: isLoadingRelated } = useQuery<BlogPostType[]>({
+    queryKey: [`/api/blog/${post?.id}/related`],
     enabled: !!post?.id,
   });
 
@@ -110,7 +182,7 @@ const BlogPost = () => {
           <BlogPostSeo
             title={post.title}
             description={post.excerpt || post.content.substring(0, 160)}
-            imageUrl={post.image || ''}
+            imageUrl={post.image || '/images/placeholder-blog.jpg'}
             author={post.author}
             publishedDate={post.createdAt ? new Date(post.createdAt).toISOString() : new Date().toISOString()}
             modifiedDate={undefined}
@@ -127,7 +199,7 @@ const BlogPost = () => {
             </Link>
 
             <article>
-              <header className="mb-12 reveal">
+              <header className="mb-12 reveal active">
                 <h1 className="text-3xl md:text-4xl font-montserrat font-bold mb-6">{post.title}</h1>
                 
                 <div className="flex flex-wrap gap-4 mb-8 text-gray-500">
@@ -141,7 +213,8 @@ const BlogPost = () => {
                   </div>
                   <div className="flex items-center">
                     <Tag className="w-4 h-4 mr-2" />
-                    <span>{post.category}</span>
+                    {/* Use the CategoryList component */}
+                    <CategoryList postId={post.id} />
                   </div>
                 </div>
 
@@ -155,7 +228,7 @@ const BlogPost = () => {
                           {/* Add main blog image as first slide */}
                           <div className="flex-grow-0 flex-shrink-0 relative w-full min-w-0">
                             <img 
-                              src={post.image} 
+                              src={post.image || '/images/placeholder-blog.jpg'} 
                               alt={post.title} 
                               className="w-full h-96 object-cover"
                             />
@@ -192,22 +265,24 @@ const BlogPost = () => {
                         onClick={scrollPrev}
                         disabled={!prevBtnEnabled}
                         aria-label="Previous image"
+                        tabIndex={0}
                       >
-                        <ChevronLeft className="h-6 w-6" />
+                        <ChevronLeft className="h-6 w-6" aria-hidden="true" />
                       </button>
                       <button 
                         className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/80 p-2 rounded-full shadow-md hover:bg-white transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                         onClick={scrollNext}
                         disabled={!nextBtnEnabled}
                         aria-label="Next image"
+                        tabIndex={0}
                       >
-                        <ChevronRight className="h-6 w-6" />
+                        <ChevronRight className="h-6 w-6" aria-hidden="true" />
                       </button>
                     </>
                   ) : (
                     // Fallback to static image if no gallery images
                     <img 
-                      src={post.image} 
+                      src={post.image || '/images/placeholder-blog.jpg'} 
                       alt={post.title} 
                       className="w-full h-96 object-cover"
                     />
@@ -215,54 +290,61 @@ const BlogPost = () => {
                 </div>
               </header>
 
-              <div className="prose max-w-none reveal">
-                {/* This would render rich content in a real implementation */}
-                <p className="text-gray-700 leading-relaxed mb-6">
-                  {post.content}
-                </p>
-                
-                <h2 className="text-2xl font-montserrat font-bold mt-12 mb-4">Introduction</h2>
-                <p className="text-gray-700 leading-relaxed mb-6">
-                  The construction industry is constantly evolving, with new technologies, methods, and materials emerging to improve efficiency, sustainability, and quality. In this article, we explore some of the latest developments in the field and how they're shaping the future of construction.
-                </p>
-                
-                <h2 className="text-2xl font-montserrat font-bold mt-12 mb-4">Key Innovations</h2>
-                <p className="text-gray-700 leading-relaxed mb-6">
-                  From Building Information Modeling (BIM) to prefabricated construction elements, the industry is embracing innovations that streamline processes and enhance outcomes. These technologies not only improve efficiency but also contribute to more sustainable building practices.
-                </p>
-                
-                <h2 className="text-2xl font-montserrat font-bold mt-12 mb-4">Challenges and Opportunities</h2>
-                <p className="text-gray-700 leading-relaxed mb-6">
-                  While new technologies offer exciting possibilities, they also present challenges in terms of implementation, training, and cost. However, the long-term benefits often outweigh these initial obstacles, making innovation a worthwhile investment for construction companies.
-                </p>
-                
-                <h2 className="text-2xl font-montserrat font-bold mt-12 mb-4">Conclusion</h2>
-                <p className="text-gray-700 leading-relaxed mb-6">
-                  As the construction industry continues to evolve, staying informed about the latest trends and technologies is essential for companies looking to remain competitive. By embracing innovation while maintaining a focus on quality and client satisfaction, construction firms can position themselves for long-term success.
-                </p>
+              <div className="prose max-w-none reveal active">
+                {/* Render the content from database */}
+                <div 
+                  className="text-gray-700 leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: post.content }}
+                />
               </div>
+              
+              {/* Tags section */}
+              <TagList postId={post.id} />
             </article>
 
-            <div className="border-t border-gray-200 mt-16 pt-12 reveal">
+            <div className="border-t border-gray-200 mt-16 pt-12 reveal active">
               <h3 className="text-2xl font-montserrat font-bold mb-8">Related Articles</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* This would use actual related posts from the API in a real implementation */}
-                {[1, 2, 3].map((_, index) => (
-                  <Link key={index} href={`/blog/related-article-${index + 1}`}>
-                    <a className="group block overflow-hidden shadow-lg">
+                {/* Show skeleton loaders while loading related posts */}
+                {isLoadingRelated && (
+                  Array(3).fill(0).map((_, index) => (
+                    <div key={index} className="group block overflow-hidden shadow-lg">
+                      <div className="relative h-48 bg-gray-200 animate-pulse"></div>
+                      <div className="p-4">
+                        <div className="h-5 bg-gray-200 w-3/4 mb-2 animate-pulse"></div>
+                        <div className="h-4 bg-gray-200 w-1/2 animate-pulse"></div>
+                      </div>
+                    </div>
+                  ))
+                )}
+                
+                {/* Show related posts when loaded */}
+                {!isLoadingRelated && relatedPosts && relatedPosts.length > 0 ? (
+                  relatedPosts.map((relatedPost) => (
+                    <Link 
+                      key={relatedPost.id} 
+                      href={`/blog/${relatedPost.slug}`} 
+                      className="group block overflow-hidden shadow-lg"
+                    >
                       <div className="relative h-48 overflow-hidden">
                         <img 
-                          src={`https://images.unsplash.com/photo-158157873${index}348-c64695cc6952?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80`} 
-                          alt="Related Article" 
+                          src={relatedPost.image || '/images/placeholder-blog.jpg'} 
+                          alt={relatedPost.title} 
                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                         />
                       </div>
                       <div className="p-4">
-                        <h4 className="font-montserrat font-bold line-clamp-2">Related Article about Construction Trends</h4>
-                        <p className="text-gray-500 text-sm mt-2">June 1, 2023</p>
+                        <h4 className="font-montserrat font-bold line-clamp-2">{relatedPost.title}</h4>
+                        <p className="text-gray-500 text-sm mt-2">
+                          {formatDate(relatedPost.createdAt || new Date())}
+                        </p>
                       </div>
-                    </a>
-                  </Link>
+                    </Link>
+                  ))
+                ) : (!isLoadingRelated && (
+                  <div className="col-span-3 text-center py-8">
+                    <p className="text-gray-500">No related articles found</p>
+                  </div>
                 ))}
               </div>
             </div>
@@ -283,8 +365,9 @@ const BlogPost = () => {
                 variant="ghost" 
                 size="icon"
                 className="absolute top-2 right-2 rounded-full"
+                aria-label="Close gallery image"
               >
-                <X className="h-5 w-5" />
+                <X className="h-5 w-5" aria-hidden="true" />
               </Button>
             </DialogHeader>
             {selectedImage && (

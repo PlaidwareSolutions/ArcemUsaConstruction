@@ -19,6 +19,28 @@ export type OurFileRouter = FileRouter & {
       size: number;
     }[];
   };
+  quoteDocumentUploader: {
+    config: {
+      image?: {
+        maxFileSize: string;
+        maxFileCount: number;
+      };
+      pdf?: {
+        maxFileSize: string;
+        maxFileCount: number;
+      };
+    };
+    metadata?: {
+      userId?: number;
+    };
+    output: {
+      url: string;
+      ufsUrl?: string;
+      key: string;
+      name: string;
+      size: number;
+    }[];
+  };
 };
 
 // Create the React hooks with explicit endpoint config

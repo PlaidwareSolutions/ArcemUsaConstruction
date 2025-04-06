@@ -13,7 +13,7 @@ const About = () => {
   useEffect(() => {
     scrollToTop();
     document.title = 'About Us - ARCEM';
-    const cleanup = initializeRevealEffects();
+    const cleanup = initializeRevealEffects(true);
     return cleanup;
   }, []);
 

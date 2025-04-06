@@ -58,8 +58,30 @@ const ServiceDetail = () => {
     queryKey: ["/api/services", serviceId, "gallery"],
     queryFn: async () => {
       if (!serviceId) return [];
-      const res = await apiRequest("GET", `/api/services/${serviceId}/gallery`);
-      return await res.json();
+      
+      console.log(`ServiceDetail: Fetching gallery for service ID ${serviceId}`);
+      try {
+        const res = await fetch(`/api/services/${serviceId}/gallery`);
+        
+        if (!res.ok) {
+          console.error(`Failed to fetch gallery for service ${serviceId}: ${res.status} ${res.statusText}`);
+          return [];
+        }
+        
+        const data = await res.json();
+        console.log(`ServiceDetail: Found ${data.length} gallery images for service ${serviceId}`);
+        
+        if (data && Array.isArray(data) && data.length > 0) {
+          console.log(`ServiceDetail: First gallery image URL:`, data[0].imageUrl);
+          return data;
+        } else {
+          console.log(`ServiceDetail: No gallery images found for service ${serviceId}`);
+          return [];
+        }
+      } catch (error) {
+        console.error(`ServiceDetail: Error fetching gallery:`, error);
+        return [];
+      }
     },
     enabled: !!serviceId,
   });
@@ -82,42 +104,59 @@ const ServiceDetail = () => {
     }
   }, [service]);
 
-  // Images for each service type
+  // Get service images from gallery or fallback to defaults
   const getServiceImages = (serviceType: string) => {
-    switch (serviceType.toLowerCase()) {
-      case "commercial construction":
-        return [
-          "/images/commercial1.jpg",
-          "/images/commercial2.jpg",
-          "/images/commercial3.jpg",
-        ];
-      case "residential construction":
-        return [
-          "/images/residential1.jpg",
-          "/images/residential2.jpg",
-          "/images/residential3.jpg",
-        ];
-      case "renovation & remodeling":
-        return [
-          "/images/renovation1.jpg",
-          "/images/renovation2.jpg",
-          "/images/renovation3.jpg",
-        ];
-      case "architectural design":
-        return [
-          "/images/slider1.png",
-          "/images/slider2.png",
-          "/images/image_1741509665889.png",
-        ];
-      case "project management":
-        return [
-          "/images/slider3.png",
-          "/images/slider4.png",
-          "/images/image_1741509691873.png",
-        ];
-      case "construction consultation":
-        return ["/images/slider5.png", "/images/image_1741432012642.png"];
-      default:
+    console.log(`Getting images for service ID: ${serviceId}, title: ${serviceType}`);
+    
+    // If we have gallery images for this service, use them
+    if (serviceGallery && serviceGallery.length > 0) {
+      console.log(`Using ${serviceGallery.length} gallery images for service ${serviceId} (${serviceType})`);
+      return serviceGallery
+        .sort((a, b) => (a.order || 0) - (b.order || 0)) // Sort by order if available
+        .map(image => image.imageUrl);
+    }
+    
+    console.log(`No gallery images found for service ${serviceId} (${serviceType}), using defaults`);
+    
+    // Otherwise use default images based on service type
+    const serviceTitle = serviceType.toLowerCase();
+    
+    if (serviceTitle.includes('commercial')) {
+      return [
+        '/images/commercial1.jpg',
+        '/images/commercial2.jpg',
+        '/images/commercial3.jpg'
+      ];
+    } else if (serviceTitle.includes('residential')) {
+      return [
+        '/images/residential1.jpg',
+        '/images/residential2.jpg',
+        '/images/residential3.jpg'
+      ];
+    } else if (serviceTitle.includes('renovation') || serviceTitle.includes('remodeling')) {
+      return [
+        '/images/renovation1.jpg',
+        '/images/renovation2.jpg',
+        '/images/renovation3.jpg'
+      ];
+    } else if (serviceTitle.includes('design') || serviceTitle.includes('engineering')) {
+      return [
+        '/images/slider1.png',
+        '/images/slider2.png',
+        '/images/image_1741509665889.png'
+      ];
+    } else if (serviceTitle.includes('management')) {
+      return [
+        '/images/slider3.png',
+        '/images/slider4.png',
+        '/images/image_1741509691873.png'
+      ];
+    } else if (serviceTitle.includes('consultation')) {
+      return [
+        '/images/slider5.png',
+        '/images/image_1741432012642.png'
+      ];
+    } else {
         return ["/images/slider1.png", "/images/slider2.png"];
     }
   };
@@ -400,7 +439,7 @@ const ServiceDetail = () => {
               <div className="md:w-1/3">
                 <div className="sticky top-24 bg-gray-100 p-6 rounded-lg">
                   <div className="text-[#1E90DB] mb-4">
-                    {getIcon(service.icon)}
+                    {getIcon(service.icon || undefined)}
                   </div>
                   <h3 className="text-xl font-montserrat font-bold mb-4">
                     {service.title}

@@ -28,6 +28,7 @@ import {
   ArrowLeft, 
   CheckCircle2, 
   Images,
+  ImagePlus,
   LayoutDashboard,
   Loader2, 
   Trash2,
@@ -36,7 +37,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import ProjectGalleryManager, { ProjectGalleryManagerHandle } from './ProjectGalleryManager';
+import ProjectGalleryManager, { ProjectGalleryManagerHandle } from './ProjectGalleryManagerFixed';
+import EmergencyGallerySaveButton from './EmergencyGallerySaveButton';
 import * as fileUtils from '@/lib/fileUtils';
 import UploadThingUploader from '@/components/common/UploadThingUploader';
 import {
@@ -266,11 +268,43 @@ const ProjectForm = ({ projectId, onClose }: ProjectFormProps) => {
   const saveProject = async (data: InsertProject) => {
     try {
       if (projectId) {
-        // Update existing project
+        console.log("Updating existing project:", projectId);
+        
+        // For existing projects, we need to make sure existing images aren't deleted
+        
+        // 1. Get the current project data to preserve its images
+        if (project) {
+          const existingImageUrl = project.image;
+          
+          // If the project has an existing feature image, make sure it's preserved
+          // (unless it's being explicitly replaced)
+          if (existingImageUrl && existingImageUrl !== data.image) {
+            console.log(`[ProjectForm] Preserving existing project feature image: ${existingImageUrl}`);
+            
+            // Commit all sessions to preserve this image
+            uploadSessions.forEach(sessionId => {
+              fileUtils.commitFiles(sessionId, [existingImageUrl]);
+            });
+          }
+        }
+        
+        // 2. Get any existing gallery images to preserve
+        if (projectGallery && projectGallery.length > 0) {
+          const galleryUrls = projectGallery.map(img => img.imageUrl).filter(Boolean);
+          console.log(`[ProjectForm] Preserving ${galleryUrls.length} existing gallery images`);
+          
+          // Commit all sessions with these gallery URLs to make sure they aren't deleted
+          uploadSessions.forEach(sessionId => {
+            fileUtils.commitFiles(sessionId, galleryUrls);
+          });
+        }
+        
+        // 3. Update the project
         await updateProject(projectId, data);
         return { id: projectId }; // Return project id for consistency
       } else {
         // Create new project
+        console.log("Creating new project");
         let createdProject;
 
         // Check if we have pending gallery images to include with the project
@@ -393,15 +427,113 @@ const ProjectForm = ({ projectId, onClose }: ProjectFormProps) => {
                   Add additional images to showcase the project (up to 10 images)
                 </p>
               </div>
+              
+              {/* ALWAYS VISIBLE GALLERY SAVE BUTTON - directly at the top level */}
+              {projectId && (
+                <Button
+                  type="button"
+                  size="default"
+                  variant="default"
+                  className="bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-2 border-2 border-green-400 animate-pulse"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    console.log("TOP LEVEL Save Gallery Images button clicked");
+                    
+                    // Get the project ID from the URL parameter
+                    const projectIdFromUrl = Number(projectId);
+                    console.log("Project ID from URL:", projectIdFromUrl);
+                    
+                    // Try to get pending images from localStorage
+                    const savedPendingImages = localStorage.getItem(`pendingImages_project_${projectIdFromUrl}`);
+                    
+                    if (savedPendingImages) {
+                      try {
+                        const pendingImages = JSON.parse(savedPendingImages);
+                        console.log(`Found ${pendingImages.length} pending images in localStorage:`, pendingImages);
+                        
+                        // Save each image one by one directly with the API
+                        const savePromises = pendingImages.map((img: {url: string, caption?: string, displayOrder?: number}) => {
+                          console.log("Saving image:", img.url);
+                          
+                          return fetch(`/api/projects/${projectIdFromUrl}/gallery`, {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                              projectId: projectIdFromUrl,
+                              imageUrl: img.url,
+                              caption: img.caption || `Project image`,
+                              displayOrder: img.displayOrder || 1
+                            })
+                          });
+                        });
+                        
+                        Promise.all(savePromises)
+                          .then(() => {
+                            // Clear pending images after save
+                            localStorage.removeItem(`pendingImages_project_${projectIdFromUrl}`);
+                            toast({
+                              title: "Gallery images saved",
+                              description: `${pendingImages.length} images saved successfully.`,
+                            });
+                            
+                            // Refresh the page to show the updated gallery
+                            setTimeout(() => {
+                              window.location.reload();
+                            }, 1500);
+                          })
+                          .catch(error => {
+                            console.error("Error saving gallery images:", error);
+                            toast({
+                              title: "Error",
+                              description: "Failed to save some gallery images. Please try again.",
+                              variant: "destructive"
+                            });
+                          });
+                          
+                      } catch (e) {
+                        console.error("Error parsing saved pending images:", e);
+                      }
+                    } else {
+                      console.log("No pending images found in localStorage");
+                      toast({
+                        title: "No images to save",
+                        description: "You haven't uploaded any new images yet.",
+                      });
+                    }
+                  }}
+                >
+                  <ImagePlus className="h-5 w-5 mr-2" />
+                  Save Gallery Images
+                </Button>
+              )}
             </div>
             
             {/* Use the gallery manager for both new and existing projects */}
-            <ProjectGalleryManager
-              ref={galleryManagerRef}
-              projectId={projectId || 0}
-              onSetAsPreview={handleSetAsPreview}
-              allowReordering={true}
-            />
+            <div className="space-y-4">
+              <ProjectGalleryManager
+                ref={galleryManagerRef}
+                projectId={projectId || 0}
+                onSetAsPreview={handleSetAsPreview}
+                allowReordering={true}
+              />
+              
+              {/* Emergency save button that operates independently from the gallery manager */}
+              {projectId ? (
+                <div className="mt-6 border-t pt-4 flex justify-center">
+                  <div className="bg-red-50 dark:bg-red-950/20 p-4 rounded-lg border border-red-200 dark:border-red-800 max-w-xl">
+                    <h5 className="text-center text-red-700 dark:text-red-400 font-semibold mb-2">Emergency Gallery Recovery</h5>
+                    <p className="text-sm text-red-600 dark:text-red-400 mb-3 text-center">
+                      If your gallery images aren't showing up after uploading, use this button to force-save them.
+                    </p>
+                    <div className="flex justify-center">
+                      <EmergencyGallerySaveButton projectId={projectId} />
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
       </div>

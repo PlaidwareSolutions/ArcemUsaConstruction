@@ -114,18 +114,12 @@ const TestimonialsManagement = () => {
 
   const handleApprove = (id: number) => {
     approveTestimonial(id);
-    toast({
-      title: "Processing approval",
-      description: "The testimonial is being approved...",
-    });
+    // Toast notification is now handled in the mutation's onSuccess callback
   };
   
   const handleRevokeApproval = (id: number) => {
     revokeApproval(id);
-    toast({
-      title: "Revoking approval",
-      description: "The testimonial approval is being revoked...",
-    });
+    // Toast notification is now handled in the mutation's onSuccess callback
   };
 
   const handleViewClick = (testimonial: Testimonial) => {
@@ -136,20 +130,14 @@ const TestimonialsManagement = () => {
   const handleDetailApprove = () => {
     if (selectedTestimonial) {
       approveTestimonial(selectedTestimonial.id);
-      toast({
-        title: "Processing approval",
-        description: "The testimonial is being approved...",
-      });
+      // Toast notification is now handled in the mutation's onSuccess callback
     }
   };
   
   const handleDetailRevokeApproval = () => {
     if (selectedTestimonial) {
       revokeApproval(selectedTestimonial.id);
-      toast({
-        title: "Revoking approval",
-        description: "The testimonial approval is being revoked...",
-      });
+      // Toast notification is now handled in the mutation's onSuccess callback
     }
   };
   

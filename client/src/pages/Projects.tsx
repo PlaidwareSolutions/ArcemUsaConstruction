@@ -9,7 +9,7 @@ const Projects = () => {
   useEffect(() => {
     scrollToTop();
     document.title = "Projects - ARCEM";
-    const cleanup = initializeRevealEffects();
+    const cleanup = initializeRevealEffects(true);
     return cleanup;
   }, []);
 
@@ -69,7 +69,7 @@ const Projects = () => {
       {/* Projects Gallery */}
       <section className="py-20 bg-white">
         <div className="container mx-auto px-4 md:px-8">
-          <div className="mb-12 reveal">
+          <div className="mb-12 reveal active">
             <h2 className="text-3xl font-montserrat font-bold mb-8 text-center">
               Our Featured Work
             </h2>
@@ -94,9 +94,15 @@ const Projects = () => {
 
           {isLoading ? (
             // Loading state
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="h-80 bg-gray-200 animate-pulse"></div>
+                <div key={i} className="flex flex-col">
+                  <div className="h-72 bg-gray-200 animate-pulse rounded-lg"></div>
+                  <div className="p-4 border border-t-0 border-gray-200 rounded-b-lg">
+                    <div className="h-5 bg-gray-200 animate-pulse rounded w-3/4 mb-2"></div>
+                    <div className="h-4 bg-gray-200 animate-pulse rounded w-1/2"></div>
+                  </div>
+                </div>
               ))}
             </div>
           ) : error ? (
@@ -104,7 +110,7 @@ const Projects = () => {
               Failed to load projects. Please try again later.
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {filteredProjects?.map((project) => (
                 <ProjectCard
                   key={project.id}
@@ -122,7 +128,7 @@ const Projects = () => {
       {/* Call to Action */}
       <section className="py-20 bg-black text-white text-center">
         <div className="container mx-auto px-4 md:px-8">
-          <div className="max-w-3xl mx-auto reveal">
+          <div className="max-w-3xl mx-auto reveal active">
             <h2 className="text-3xl md:text-4xl font-montserrat font-bold mb-6">
               Ready to Build Your Vision?
             </h2>

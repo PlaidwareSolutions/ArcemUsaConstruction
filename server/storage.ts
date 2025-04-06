@@ -12,6 +12,7 @@ import {
   messages, type Message, type InsertMessage,
   newsletterSubscribers, type NewsletterSubscriber, type InsertNewsletterSubscriber,
   quoteRequests, type QuoteRequest, type InsertQuoteRequest,
+  quoteRequestAttachments, type QuoteRequestAttachment, type InsertQuoteRequestAttachment,
   subcontractors, type Subcontractor, type InsertSubcontractor,
   vendors, type Vendor, type InsertVendor,
   jobPostings, type JobPosting, type InsertJobPosting,
@@ -20,6 +21,20 @@ import {
 
 // modify the interface with any CRUD methods
 // you might need
+
+// Define simplified interfaces for blog categories and tags that don't require createdAt
+export interface SimpleBlogCategory {
+  id: number;
+  name: string;
+  slug: string;
+  description: string | null;
+}
+
+export interface SimpleBlogTag {
+  id: number;
+  name: string;
+  slug: string;
+}
 
 export interface IStorage {
   // Users
@@ -70,12 +85,12 @@ export interface IStorage {
   deleteAllBlogGalleryImages(postId: number): Promise<boolean>;
   
   // Blog Post Categories
-  getBlogPostCategories(postId: number): Promise<BlogCategory[]>;
+  getBlogPostCategories(postId: number): Promise<SimpleBlogCategory[]>;
   linkBlogPostCategories(postId: number, categoryIds: number[]): Promise<void>;
   updateBlogPostCategories(postId: number, categoryIds: number[]): Promise<void>;
   
   // Blog Post Tags
-  getBlogPostTags(postId: number): Promise<BlogTag[]>;
+  getBlogPostTags(postId: number): Promise<SimpleBlogTag[]>;
   linkBlogPostTags(postId: number, tagIds: number[]): Promise<void>;
   updateBlogPostTags(postId: number, tagIds: number[]): Promise<void>;
   
@@ -127,6 +142,12 @@ export interface IStorage {
   markQuoteRequestAsReviewed(id: number): Promise<QuoteRequest | undefined>;
   updateQuoteRequestStatus(id: number, status: string): Promise<QuoteRequest | undefined>;
   deleteQuoteRequest(id: number): Promise<boolean>;
+  
+  // Quote Request Attachments
+  getQuoteRequestAttachments(quoteRequestId: number): Promise<QuoteRequestAttachment[]>;
+  createQuoteRequestAttachment(attachment: InsertQuoteRequestAttachment): Promise<QuoteRequestAttachment>;
+  deleteQuoteRequestAttachment(id: number): Promise<boolean>;
+  deleteAllQuoteRequestAttachments(quoteRequestId: number): Promise<boolean>;
 
   // Subcontractors
   getSubcontractors(): Promise<Subcontractor[]>;
@@ -184,6 +205,7 @@ export class MemStorage implements IStorage {
   private messages: Map<number, Message>;
   private newsletterSubscribers: Map<number, NewsletterSubscriber>;
   private quoteRequests: Map<number, QuoteRequest>;
+  private quoteRequestAttachments: Map<number, QuoteRequestAttachment>;
   private subcontractors: Map<number, Subcontractor>;
   private vendors: Map<number, Vendor>;
   private jobPostings: Map<number, JobPosting>;
@@ -201,6 +223,7 @@ export class MemStorage implements IStorage {
   messageCurrentId: number;
   newsletterSubscriberCurrentId: number;
   quoteRequestCurrentId: number;
+  quoteRequestAttachmentCurrentId: number;
   subcontractorCurrentId: number;
   vendorCurrentId: number;
   jobPostingCurrentId: number;
@@ -224,6 +247,7 @@ export class MemStorage implements IStorage {
     this.messages = new Map();
     this.newsletterSubscribers = new Map();
     this.quoteRequests = new Map();
+    this.quoteRequestAttachments = new Map();
     this.subcontractors = new Map();
     this.vendors = new Map();
     this.jobPostings = new Map();
@@ -242,6 +266,7 @@ export class MemStorage implements IStorage {
     this.messageCurrentId = 1;
     this.newsletterSubscriberCurrentId = 1;
     this.quoteRequestCurrentId = 1;
+    this.quoteRequestAttachmentCurrentId = 1;
     this.subcontractorCurrentId = 1;
     this.vendorCurrentId = 1;
     this.jobPostingCurrentId = 1;
@@ -1194,7 +1219,50 @@ export class MemStorage implements IStorage {
   }
 
   async deleteQuoteRequest(id: number): Promise<boolean> {
+    // Delete all attachments for this quote request
+    await this.deleteAllQuoteRequestAttachments(id);
     return this.quoteRequests.delete(id);
+  }
+  
+  // Quote Request Attachments
+  async getQuoteRequestAttachments(quoteRequestId: number): Promise<QuoteRequestAttachment[]> {
+    return Array.from(this.quoteRequestAttachments.values())
+      .filter(attachment => attachment.quoteRequestId === quoteRequestId);
+  }
+  
+  async createQuoteRequestAttachment(attachment: InsertQuoteRequestAttachment): Promise<QuoteRequestAttachment> {
+    // Generate an ID for the new attachment
+    const id = this.projectGalleryCurrentId++; // Reuse the project gallery counter for now
+    const now = new Date();
+    
+    const newAttachment: QuoteRequestAttachment = {
+      id,
+      quoteRequestId: attachment.quoteRequestId,
+      fileName: attachment.fileName,
+      fileUrl: attachment.fileUrl,
+      fileKey: attachment.fileKey,
+      fileSize: attachment.fileSize,
+      fileType: attachment.fileType,
+      createdAt: now
+    };
+    
+    this.quoteRequestAttachments.set(id, newAttachment);
+    return newAttachment;
+  }
+  
+  async deleteQuoteRequestAttachment(id: number): Promise<boolean> {
+    return this.quoteRequestAttachments.delete(id);
+  }
+  
+  async deleteAllQuoteRequestAttachments(quoteRequestId: number): Promise<boolean> {
+    const attachments = Array.from(this.quoteRequestAttachments.values())
+      .filter(attachment => attachment.quoteRequestId === quoteRequestId);
+    
+    attachments.forEach(attachment => {
+      this.quoteRequestAttachments.delete(attachment.id);
+    });
+    
+    return true;
   }
 
   // Subcontractors

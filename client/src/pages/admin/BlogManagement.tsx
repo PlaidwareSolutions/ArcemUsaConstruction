@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Search, Plus, Edit, Trash2, Eye, EyeOff } from 'lucide-react';
 import AdminNav from '@/components/admin/AdminNav';
 import BlogForm from '@/components/admin/BlogForm';
+import BlogCategories from '@/components/common/BlogCategories';
 import { 
   Dialog,
   DialogContent, 
@@ -278,7 +279,7 @@ const BlogManagement = () => {
                                 <div className="text-sm text-gray-500">{post.author}</div>
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="text-sm text-gray-500">{post.category}</div>
+                                <BlogCategories postId={post.id} variant="secondary" />
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap">
                                 <div className="text-sm text-gray-500">{post.createdAt ? formatDate(post.createdAt) : 'No date'}</div>

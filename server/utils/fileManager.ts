@@ -159,15 +159,42 @@ export class FileManager {
    * @param preserveUrls Optional array of URLs to preserve (not delete)
    * @returns Object with arrays of deleted and failed file URLs
    */
-  static async cleanupSession(sessionId: string, specificFileUrl?: string, preserveUrls: string[] = []): Promise<{ deletedUrls: string[], failedUrls: string[], preservedUrls: string[] }> {
+  static async cleanupSession(sessionId: string, specificFileUrl?: string, preserveUrls: string[] = []): Promise<{ 
+    deletedUrls: string[], 
+    failedUrls: string[], 
+    preservedUrls: string[],
+    deletedCount: number,
+    failedCount: number,
+    preservedCount: number,
+    deletedFiles: string[],
+    preservedFiles: string[],
+    preservedReasons: Record<string, string>
+  }> {
     if (!sessionId) {
-      console.error('Invalid sessionId for cleanup');
-      return { deletedUrls: [], failedUrls: [], preservedUrls: [] };
+      console.error('[FileManager] Invalid sessionId for cleanup');
+      return { 
+        deletedUrls: [], 
+        failedUrls: [], 
+        preservedUrls: [],
+        deletedCount: 0,
+        failedCount: 0,
+        preservedCount: 0,
+        deletedFiles: [],
+        preservedFiles: [],
+        preservedReasons: {}
+      };
     }
     
-    console.log(`Cleaning up session ${sessionId}${specificFileUrl ? ` (specific file: ${specificFileUrl})` : ''}`);
-    if (preserveUrls.length > 0) {
-      console.log(`Preserving ${preserveUrls.length} files during cleanup`);
+    console.log(`[FileManager] Cleaning up session ${sessionId}${specificFileUrl ? ` (specific file: ${specificFileUrl})` : ''}`);
+    if (preserveUrls && preserveUrls.length > 0) {
+      console.log(`[FileManager] IMPORTANT: Preserving ${preserveUrls.length} files during cleanup`);
+      // Only log the first few URLs to avoid console spam for large lists
+      if (preserveUrls.length <= 10) {
+        console.log(`[FileManager] Files to preserve:`, preserveUrls);
+      } else {
+        console.log(`[FileManager] First 10 files to preserve:`, preserveUrls.slice(0, 10));
+        console.log(`[FileManager] ... and ${preserveUrls.length - 10} more files`);
+      }
     }
     
     const filesToDelete: string[] = [];
@@ -181,21 +208,22 @@ export class FileManager {
       // Match session ID and specific file URL if provided
       const matchesSession = pendingFile.sessionId === sessionId;
       const matchesSpecificUrl = !specificFileUrl || pendingFile.url === specificFileUrl;
-      const shouldPreserve = preserveUrls.includes(pendingFile.url);
+      const shouldPreserve = Array.isArray(preserveUrls) && preserveUrls.includes(pendingFile.url);
       
       // Only delete if it matches the criteria and is not in the preserve list
       if (matchesSession && matchesSpecificUrl) {
         if (shouldPreserve) {
           preservedFiles.push(pendingFile.url);
-          console.log(`Preserving file: ${pendingFile.url}`);
+          console.log(`[FileManager] Preserving file: ${pendingFile.url}`);
         } else {
           filesToDelete.push(pendingFile.url);
           keysToDelete.push(key);
+          console.log(`[FileManager] Marking file for deletion: ${pendingFile.url}`);
         }
       }
     }
     
-    console.log(`Found ${filesToDelete.length} files to delete and ${preservedFiles.length} files to preserve for session ${sessionId}`);
+    console.log(`[FileManager] Found ${filesToDelete.length} files to delete and ${preservedFiles.length} files to preserve for session ${sessionId}`);
     
     // If specific URL was provided but not found in tracking, still try to delete it
     // But only if it's not in the preserve list
@@ -210,11 +238,28 @@ export class FileManager {
     // Delete files from their storage locations
     const deletedUrls: string[] = [];
     const failedUrls: string[] = [];
+    const deletedFiles: string[] = []; // Track actual deleted files for response
+    const preservedFilesWithReason: Record<string, string> = {}; // Track why files were preserved
     
+    // Extra safety check - build a map of all preserved URLs for quick lookup
+    const preserveUrlsMap = new Map<string, boolean>();
+    if (Array.isArray(preserveUrls)) {
+      preserveUrls.forEach(url => {
+        if (url) {
+          preserveUrlsMap.set(url, true);
+          // Record reason for preservation in debugging info
+          preservedFilesWithReason[url] = "In preserve list";
+        }
+      });
+    }
+    
+    console.log(`[FileManager] Built preservation map with ${preserveUrlsMap.size} URLs`);
+    
+    // Now process deletions with the lookup map
     for (const fileUrl of filesToDelete) {
-      // Extra check to make sure we don't delete preserved files
-      if (preserveUrls.includes(fileUrl)) {
-        console.log(`Skipping deletion of preserved file: ${fileUrl}`);
+      // Extra check to make sure we don't delete preserved files - use the Map for faster lookups
+      if (preserveUrlsMap.has(fileUrl)) {
+        console.log(`[FileManager] Skipping deletion of preserved file: ${fileUrl}`);
         preservedFiles.push(fileUrl);
         continue;
       }
@@ -270,12 +315,33 @@ export class FileManager {
       this.pendingFiles.delete(key);
     }
     
-    console.log(`Cleanup completed: ${deletedUrls.length} files deleted, ${failedUrls.length} failed, ${preservedFiles.length} preserved for session ${sessionId}`);
+    // Update the deleted files list to include actual files that were deleted
+    deletedUrls.forEach(url => {
+      deletedFiles.push(url);
+    });
     
+    console.log(`[FileManager] Cleanup completed: ${deletedUrls.length} files deleted, ${failedUrls.length} failed, ${preservedFiles.length} preserved for session ${sessionId}`);
+    
+    if (deletedUrls.length > 0) {
+      console.log(`[FileManager] Deleted files:`, deletedUrls);
+    }
+    
+    if (preservedFiles.length > 0) {
+      console.log(`[FileManager] Preserved files:`, preservedFiles);
+    }
+    
+    // Return enhanced response with detailed information
     return {
       deletedUrls,
       failedUrls,
-      preservedUrls: preservedFiles
+      preservedUrls: preservedFiles,
+      // Return additional debugging information
+      deletedCount: deletedUrls.length,
+      failedCount: failedUrls.length,
+      preservedCount: preservedFiles.length,
+      deletedFiles,
+      preservedFiles,
+      preservedReasons: preservedFilesWithReason // Include why files were preserved
     };
   }
 

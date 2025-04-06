@@ -14,6 +14,7 @@ import {
   Handshake,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import PageHeader from "@/components/PageHeader";
 
 // Animation variants
 const fadeIn = {
@@ -44,45 +45,23 @@ const JoinUs = () => {
   useEffect(() => {
     scrollToTop();
     document.title = "Join Our Team - ARCEM";
-    initializeRevealEffects();
+    initializeRevealEffects(true);
   }, []);
 
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
-      <div
-        className="relative h-[350px] flex items-center justify-center"
-        style={{
-          backgroundImage:
-            "url('/uploads/images/join-us/jesse-orrico-L94dWXNKwrY-unsplash.jpg')",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
+      <PageHeader
+        title="Join Our Team"
+        subtitle="We're committed to building relationships\nas sturdy as our constructions."
+        backgroundImage="/uploads/images/join-us/jesse-orrico-L94dWXNKwrY-unsplash.jpg"
       >
-        <div className="absolute inset-0 bg-black opacity-70"></div>
-        <motion.div
-          className="relative z-10 text-center px-4 py-20"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-        >
-          <h1 className="text-white text-5xl md:text-6xl font-montserrat font-bold mb-6">
-            Join Our Team
-          </h1>
-          <p className="text-white text-xl md:text-2xl font-light max-w-3xl mx-auto mb-8">
-            We're committed to building relationships as sturdy as our
-            constructions.
-          </p>
-          <Link href="/subcontractors">
-            <Button
-              size="lg"
-              className="bg-[#1E90DB] hover:bg-[#1670B0] text-lg"
-            >
-              Let's Build Together <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-          </Link>
-        </motion.div>
-      </div>
+        <Link href="/subcontractors">
+          <Button size="lg" className="bg-[#1E90DB] hover:bg-[#1670B0] text-lg">
+            Let's Build Together <ArrowRight className="ml-2 h-5 w-5" />
+          </Button>
+        </Link>
+      </PageHeader>
 
       {/* Intro Section */}
       <div className="bg-white py-20">
@@ -268,7 +247,7 @@ const JoinUs = () => {
             >
               <div className="h-56 bg-gray-200 relative overflow-hidden">
                 <img
-                  src="/uploads/images/greyson-joralemon-A1g0oeX29ec-unsplash.jpg"
+                  src="/uploads/images/join-us/greyson-joralemon-A1g0oeX29ec-unsplash.jpg"
                   alt="Subcontractor working with power tool"
                   className="w-full h-full object-cover transition-transform hover:scale-110 duration-700"
                 />

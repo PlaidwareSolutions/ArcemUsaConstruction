@@ -3,25 +3,89 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'wouter';
 import { initializeRevealEffects, scrollToTop } from '@/lib/utils';
 import BlogCard from '@/components/common/BlogCard';
-import { BlogPost } from '@shared/schema';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
+
+// Extend BlogPost type to include both createdAt and created_at since API might return either
+import { BlogPost as BaseBlogPost } from '@shared/schema';
+
+interface BlogPost extends BaseBlogPost {
+  created_at?: string | Date | null;
+}
+
+// Separated Tag List component to avoid hooks inside render
+interface TagListProps {
+  postId: number;
+  createdAt?: string | Date | null;
+  created_at?: string | Date | null;
+}
+
+interface Tag {
+  id: number;
+  name: string;
+  slug: string;
+}
+
+// Make the component exportable to fix the reference issue
+export const TagList = ({ postId, createdAt, created_at }: TagListProps) => {
+  const { data: tags = [] } = useQuery<Tag[]>({
+    queryKey: [`/api/blog/${postId}/tags`],
+    enabled: !!postId,
+  });
+  
+  // Handle both createdAt and created_at fields for compatibility
+  const dateValue = createdAt || created_at;
+  
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {tags && tags.length > 0 ? (
+        tags.map((tag) => (
+          <span key={tag.id} className="text-xs text-gray-600 bg-gray-100 px-3 py-1 rounded-full font-medium">
+            #{tag.name}
+          </span>
+        ))
+      ) : (
+        <span className="text-xs text-gray-500">
+          {dateValue ? new Date(dateValue).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          }) : ''}
+        </span>
+      )}
+    </div>
+  );
+};
 
 const Blog = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState<number | 'all'>('all');
 
   useEffect(() => {
     scrollToTop();
     document.title = 'Blog - ARCEM';
-    const cleanup = initializeRevealEffects();
+    const cleanup = initializeRevealEffects(true);
     return cleanup;
   }, []);
 
-  const { data: blogPosts, isLoading, error } = useQuery<BlogPost[]>({
+  // Define category interface
+  interface Category {
+    id: number;
+    name: string;
+    slug: string;
+  }
+
+  // Fetch blog posts
+  const { data: blogPosts = [], isLoading, error } = useQuery<BlogPost[]>({
     queryKey: ['/api/blog'],
+  });
+
+  // Fetch all categories
+  const { data: allCategories = [] } = useQuery<Category[]>({
+    queryKey: ['/api/blog/categories'],
   });
 
   // Handle search input change
@@ -29,20 +93,52 @@ const Blog = () => {
     setSearchQuery(e.target.value);
   };
 
-  // Get unique categories from blog posts
-  const categories = blogPosts 
-    ? ['all', ...Array.from(new Set(blogPosts.map(post => post.category)))] 
-    : ['all'];
-
-  // Filter blog posts based on search query and selected category
-  const filteredPosts = blogPosts?.filter(post => {
-    const matchesSearch = searchQuery === '' || 
+  // Get all post categories
+  const { data: allPostCategories = {}, isLoading: isLoadingPostCategories } = useQuery<Record<number, Category[]>>({
+    queryKey: ['/api/blog/all-categories'],
+    queryFn: async () => {
+      // Only fetch if we have posts
+      if (!blogPosts?.length) return {};
+      
+      // Create a map to store categories for each post
+      const categoriesMap: Record<number, Category[]> = {};
+      
+      // Fetch categories for each post in parallel
+      await Promise.all(
+        blogPosts.map(async (post) => {
+          try {
+            const response = await fetch(`/api/blog/${post.id}/categories`);
+            if (response.ok) {
+              const categories = await response.json();
+              categoriesMap[post.id] = categories;
+            } else {
+              categoriesMap[post.id] = [];
+            }
+          } catch (error) {
+            console.error(`Error fetching categories for post ${post.id}:`, error);
+            categoriesMap[post.id] = [];
+          }
+        })
+      );
+      
+      return categoriesMap;
+    },
+    enabled: !!blogPosts?.length,
+  });
+  
+  // Filter blog posts based on search query
+  const searchFilteredPosts = blogPosts?.filter(post => {
+    return searchQuery === '' || 
       post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      post.excerpt.toLowerCase().includes(searchQuery.toLowerCase());
+      (post.excerpt && post.excerpt.toLowerCase().includes(searchQuery.toLowerCase()));
+  });
+
+  // Filter posts by selected category
+  const filteredPosts = searchFilteredPosts?.filter(post => {
+    if (selectedCategory === 'all') return true;
     
-    const matchesCategory = selectedCategory === 'all' || post.category === selectedCategory;
-    
-    return matchesSearch && matchesCategory;
+    const postCategories = allPostCategories[post.id] || [];
+    return postCategories.some(cat => cat.id === selectedCategory);
   });
 
   return (
@@ -74,23 +170,39 @@ const Blog = () => {
       <section className="py-20 bg-white">
         <div className="container mx-auto px-4 md:px-8">
           {/* Filter and Search */}
-          <div className="mb-12 reveal">
+          <div className="mb-12 reveal active">
             <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-center">
               {/* Category filter */}
-              <div className="flex flex-wrap gap-3">
-                {categories.map(category => (
-                  <button
-                    key={category}
-                    onClick={() => setSelectedCategory(category)}
-                    className={`px-4 py-2 font-montserrat text-sm transition-colors ${
-                      selectedCategory === category 
-                        ? 'bg-[#1E90DB] text-white' 
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              <div className="space-y-3 w-full">
+                <h3 className="text-sm font-semibold text-gray-600 tracking-wide uppercase">FILTER BY CATEGORY</h3>
+                <div className="flex flex-wrap gap-2">
+                  <Badge
+                    variant={selectedCategory === 'all' ? 'default' : 'outline'}
+                    className={`px-4 py-2 cursor-pointer hover:bg-gray-100 text-sm font-medium transition-all ${
+                      selectedCategory === 'all' 
+                        ? 'bg-[#1E90DB] hover:bg-[#1670B0] text-white' 
+                        : 'border-gray-300 text-gray-700'
                     }`}
+                    onClick={() => setSelectedCategory('all')}
                   >
-                    {category.toUpperCase()}
-                  </button>
-                ))}
+                    ALL CATEGORIES
+                  </Badge>
+                  
+                  {allCategories.map(category => (
+                    <Badge
+                      key={category.id}
+                      variant={selectedCategory === category.id ? 'default' : 'outline'}
+                      className={`px-4 py-2 cursor-pointer hover:bg-gray-100 text-sm font-medium transition-all ${
+                        selectedCategory === category.id 
+                          ? 'bg-[#1E90DB] hover:bg-[#1670B0] text-white' 
+                          : 'border-gray-300 text-gray-700'
+                      }`}
+                      onClick={() => setSelectedCategory(category.id)}
+                    >
+                      {category.name}
+                    </Badge>
+                  ))}
+                </div>
               </div>
               
               {/* Search */}
@@ -107,11 +219,11 @@ const Blog = () => {
             </div>
           </div>
           
-          {isLoading ? (
+          {isLoading || isLoadingPostCategories ? (
             // Loading state
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {[1, 2, 3, 4, 5, 6].map(i => (
-                <div key={i} className="bg-white shadow-lg reveal">
+                <div key={i} className="bg-white shadow-lg reveal active">
                   <div className="h-60 bg-gray-200 animate-pulse"></div>
                   <div className="p-6">
                     <div className="h-4 w-32 bg-gray-200 mb-4"></div>
@@ -140,19 +252,49 @@ const Blog = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {filteredPosts?.map(post => (
-                <BlogCard 
-                  key={post.id}
-                  slug={post.slug}
-                  title={post.title}
-                  excerpt={post.excerpt}
-                  imageUrl={post.image}
-                  date={post.createdAt ? new Date(post.createdAt).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  }) : 'N/A'}
-                  category={post.category}
-                />
+                <div key={post.id} className="bg-white shadow-md hover:shadow-lg transition-shadow duration-300 reveal active">
+                  <Link href={`/blog/${post.slug}`} className="block overflow-hidden relative h-56">
+                    <img 
+                      src={post.image || '/images/placeholder-blog.jpg'} 
+                      alt={post.title} 
+                      className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
+                    />
+                  </Link>
+                  <div className="p-6">
+                    <div className="flex gap-2 mb-3 flex-wrap">
+                      {allPostCategories[post.id]?.map(cat => (
+                        <Badge key={cat.id} variant="outline" className="font-medium text-xs px-3 py-1 border-gray-300">
+                          {cat.name}
+                        </Badge>
+                      ))}
+                      {(!allPostCategories[post.id] || allPostCategories[post.id]?.length === 0) && post.category && (
+                        <Badge variant="outline" className="font-medium text-xs px-3 py-1 border-gray-300">
+                          {post.category}
+                        </Badge>
+                      )}
+                    </div>
+                    
+                    <Link href={`/blog/${post.slug}`}>
+                      <h3 className="text-xl font-montserrat font-bold mb-2 hover:text-blue-600 transition-colors">
+                        {post.title}
+                      </h3>
+                    </Link>
+                    
+                    <p className="text-gray-600 mb-4 line-clamp-3">
+                      {post.excerpt || ''}
+                    </p>
+                    
+                    <div className="flex justify-between items-center text-sm">
+                      <div>
+                        {/* Tags and date section */}
+                        <TagList postId={post.id} created_at={post.created_at} createdAt={post.createdAt} />
+                      </div>
+                      <Link href={`/blog/${post.slug}`} className="text-blue-600 hover:underline text-sm">
+                        Read More
+                      </Link>
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
           )}
@@ -162,7 +304,7 @@ const Blog = () => {
       {/* Subscribe Section */}
       <section className="py-20 bg-gray-100">
         <div className="container mx-auto px-4 md:px-8 text-center">
-          <div className="max-w-2xl mx-auto reveal">
+          <div className="max-w-2xl mx-auto reveal active">
             <h2 className="text-3xl font-montserrat font-bold mb-4">Subscribe to Our Newsletter</h2>
             <p className="text-gray-600 mb-8">
               Stay updated with our latest projects, industry insights, and company news.

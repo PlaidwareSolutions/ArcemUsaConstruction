@@ -1,10 +1,10 @@
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, ne, and, inArray, count } from "drizzle-orm";
 import { db } from "./db";
 import { 
   users, projects, projectGallery, blogCategories, blogTags, blogPosts, 
   blogPostCategories, blogPostTags, blogGallery,
   testimonials, services, serviceGallery, messages, newsletterSubscribers, quoteRequests,
-  subcontractors, vendors, jobPostings, teamMembers,
+  quoteRequestAttachments, subcontractors, vendors, jobPostings, teamMembers,
   type User, type InsertUser, 
   type Project, type InsertProject,
   type ProjectGallery, type InsertProjectGallery,
@@ -18,13 +18,14 @@ import {
   type Message, type InsertMessage,
   type NewsletterSubscriber, type InsertNewsletterSubscriber,
   type QuoteRequest, type InsertQuoteRequest,
+  type QuoteRequestAttachment, type InsertQuoteRequestAttachment,
   type Subcontractor, type InsertSubcontractor,
   type Vendor, type InsertVendor,
   type JobPosting, type InsertJobPosting,
   type TeamMember, type InsertTeamMember
 } from "../shared/schema";
 import { IStorage } from "./storage";
-import { FileManager } from './utils/fileManager';
+import { FileManager, extractUploadThingKeyFromUrl } from './utils/fileManager';
 
 export class DBStorage implements IStorage {
   // Users
@@ -105,15 +106,99 @@ export class DBStorage implements IStorage {
     return result[0];
   }
   
+  // Helper method to check if an image URL is used in any other entity
+  private async isImageUsedElsewhere(imageUrl: string, excludeProjectGalleryId?: number, excludeProjectId?: number): Promise<boolean> {
+    // Build an array of conditions to check across multiple tables
+    const queries = [];
+    
+    // Check project gallery
+    if (excludeProjectGalleryId) {
+      queries.push(
+        db.select({ count: count() }).from(projectGallery)
+          .where(and(
+            ne(projectGallery.id, excludeProjectGalleryId),
+            eq(projectGallery.imageUrl, imageUrl)
+          ))
+      );
+    } else if (excludeProjectId) {
+      queries.push(
+        db.select({ count: count() }).from(projectGallery)
+          .where(and(
+            ne(projectGallery.projectId, excludeProjectId),
+            eq(projectGallery.imageUrl, imageUrl)
+          ))
+      );
+    } else {
+      queries.push(
+        db.select({ count: count() }).from(projectGallery)
+          .where(eq(projectGallery.imageUrl, imageUrl))
+      );
+    }
+    
+    // Check project main images
+    if (excludeProjectId) {
+      queries.push(
+        db.select({ count: count() }).from(projects)
+          .where(and(
+            ne(projects.id, excludeProjectId),
+            eq(projects.image, imageUrl)
+          ))
+      );
+    } else {
+      queries.push(
+        db.select({ count: count() }).from(projects)
+          .where(eq(projects.image, imageUrl))
+      );
+    }
+    
+    // Also check service gallery and blog gallery tables
+    queries.push(
+      db.select({ count: count() }).from(serviceGallery).where(eq(serviceGallery.imageUrl, imageUrl)),
+      db.select({ count: count() }).from(blogGallery).where(eq(blogGallery.imageUrl, imageUrl))
+    );
+    
+    // Check image columns in blog posts (using correct column name)
+    queries.push(
+      db.select({ count: count() }).from(blogPosts).where(eq(blogPosts.image, imageUrl))
+    );
+    
+    // Execute all queries concurrently
+    const results = await Promise.all(queries);
+    
+    // If any query returns a count > 0, the image is used elsewhere
+    return results.some(result => result[0]?.count > 0);
+  }
+
   async deleteProjectGalleryImage(id: number): Promise<boolean> {
     // First fetch the image to get its URL
     const imageToDelete = await db.select().from(projectGallery).where(eq(projectGallery.id, id));
     
     if (imageToDelete.length > 0) {
-      // Delete image from UploadThing if applicable
-      await FileManager.deleteFile(imageToDelete[0].imageUrl);
+      const imageUrl = imageToDelete[0].imageUrl;
+      const projectId = imageToDelete[0].projectId;
       
-      // Then delete from database
+      console.log(`[dbStorage] Processing deletion of project gallery image (ID: ${id}, project: ${projectId})`);
+      
+      // Check if this image is used elsewhere before deleting it from UploadThing
+      const isUsedElsewhere = await this.isImageUsedElsewhere(imageUrl, id, projectId);
+      
+      if (isUsedElsewhere) {
+        console.log(`[dbStorage] Preserving file ${imageUrl} as it is referenced elsewhere`);
+      } else {
+        console.log(`[dbStorage] Image not used elsewhere, deleting from UploadThing: ${imageUrl}`);
+        // Extract UploadThing key and delete the file
+        const key = extractUploadThingKeyFromUrl(imageUrl);
+        if (key) {
+          try {
+            console.log(`[dbStorage] Deleting UploadThing file with key: ${key}`);
+            await FileManager.deleteFile(imageUrl);
+          } catch (error) {
+            console.error(`[dbStorage] Error deleting file from UploadThing:`, error);
+          }
+        }
+      }
+      
+      // Delete from database
       const result = await db.delete(projectGallery).where(eq(projectGallery.id, id)).returning();
       return result.length > 0;
     }
@@ -125,15 +210,27 @@ export class DBStorage implements IStorage {
     // First get all gallery images for this project
     const imagesToDelete = await db.select().from(projectGallery).where(eq(projectGallery.projectId, projectId));
     
-    // Delete each image from UploadThing if applicable
-    for (const image of imagesToDelete) {
-      await FileManager.deleteFile(image.imageUrl);
-    }
+    console.log(`[dbStorage] Processing deletion of all gallery images for project ${projectId} (${imagesToDelete.length} images)`);
     
-    // Then delete from database
+    // First delete all images from the database to avoid race conditions
     const result = await db.delete(projectGallery)
       .where(eq(projectGallery.projectId, projectId))
       .returning();
+    
+    // Then check and delete each image file safely
+    for (const image of imagesToDelete) {
+      const imageUrl = image.imageUrl;
+      
+      // Check if this image is used elsewhere (now that we've deleted the gallery entries)
+      const isImageUsedElsewhere = await this.isImageUsedElsewhere(imageUrl);
+      
+      if (isImageUsedElsewhere) {
+        console.log(`[dbStorage] Preserving file ${imageUrl} as it's used elsewhere in the system`);
+      } else {
+        console.log(`[dbStorage] File ${imageUrl} is not used elsewhere, deleting from storage`);
+        await FileManager.deleteFile(imageUrl);
+      }
+    }
     
     return result.length > 0 || imagesToDelete.length > 0;
   }
@@ -219,8 +316,15 @@ export class DBStorage implements IStorage {
   }
 
   async addBlogGalleryImage(galleryImage: InsertBlogGallery): Promise<BlogGallery> {
-    const result = await db.insert(blogGallery).values(galleryImage).returning();
-    return result[0];
+    console.log(`[DB STORAGE] Attempting to add blog gallery image:`, galleryImage);
+    try {
+      const result = await db.insert(blogGallery).values(galleryImage).returning();
+      console.log(`[DB STORAGE] Successfully added blog gallery image:`, result[0]);
+      return result[0];
+    } catch (error) {
+      console.error(`[DB STORAGE ERROR] Failed to add blog gallery image:`, error);
+      throw error;
+    }
   }
 
   async updateBlogGalleryImage(id: number, galleryImageUpdate: Partial<InsertBlogGallery>): Promise<BlogGallery | undefined> {
@@ -236,10 +340,31 @@ export class DBStorage implements IStorage {
     const imageToDelete = await db.select().from(blogGallery).where(eq(blogGallery.id, id));
     
     if (imageToDelete.length > 0) {
-      // Delete image from UploadThing if applicable
-      await FileManager.deleteFile(imageToDelete[0].imageUrl);
+      const imageUrl = imageToDelete[0].imageUrl;
+      const postId = imageToDelete[0].postId;
       
-      // Then delete from database
+      console.log(`[dbStorage] Processing deletion of blog gallery image (ID: ${id}, post: ${postId})`);
+      
+      // Check if this image is used elsewhere before deleting it from UploadThing
+      const isUsedElsewhere = await this.isImageUsedElsewhere(imageUrl, id);
+      
+      if (isUsedElsewhere) {
+        console.log(`[dbStorage] Preserving file ${imageUrl} as it is referenced elsewhere`);
+      } else {
+        console.log(`[dbStorage] Image not used elsewhere, deleting from UploadThing: ${imageUrl}`);
+        // Extract UploadThing key and delete the file
+        const key = extractUploadThingKeyFromUrl(imageUrl);
+        if (key) {
+          try {
+            console.log(`[dbStorage] Deleting UploadThing file with key: ${key}`);
+            await FileManager.deleteFile(imageUrl);
+          } catch (error) {
+            console.error(`[dbStorage] Error deleting file from UploadThing:`, error);
+          }
+        }
+      }
+      
+      // Delete from database
       const result = await db.delete(blogGallery).where(eq(blogGallery.id, id)).returning();
       return result.length > 0;
     }
@@ -251,12 +376,36 @@ export class DBStorage implements IStorage {
     // First get all gallery images for this post
     const imagesToDelete = await db.select().from(blogGallery).where(eq(blogGallery.postId, postId));
     
-    // Delete each image from UploadThing if applicable
+    console.log(`[dbStorage] Processing deletion of all gallery images for blog post ${postId} (${imagesToDelete.length} images)`);
+    
+    // Check and delete each image safely
     for (const image of imagesToDelete) {
-      await FileManager.deleteFile(image.imageUrl);
+      const imageUrl = image.imageUrl;
+      
+      // Check if this image is used elsewhere (other blog posts, or as main image)
+      const otherImagesWithSameUrl = await db.select().from(blogGallery)
+        .where(and(
+          ne(blogGallery.postId, postId),
+          eq(blogGallery.imageUrl, imageUrl)
+        ));
+      
+      const postsWithSameImage = await db.select().from(blogPosts)
+        .where(and(
+          ne(blogPosts.id, postId),
+          eq(blogPosts.image, imageUrl)
+        ));
+      
+      const isImageUsedElsewhere = otherImagesWithSameUrl.length > 0 || postsWithSameImage.length > 0;
+      
+      if (isImageUsedElsewhere) {
+        console.log(`[dbStorage] Preserving file ${imageUrl} as it's used elsewhere in the system`);
+      } else {
+        console.log(`[dbStorage] File ${imageUrl} is not used elsewhere, deleting from storage`);
+        await FileManager.deleteFile(imageUrl);
+      }
     }
     
-    // Then delete from database
+    // Delete all gallery entries from database
     const result = await db.delete(blogGallery)
       .where(eq(blogGallery.postId, postId))
       .returning();
@@ -265,43 +414,80 @@ export class DBStorage implements IStorage {
   }
   
   // Blog Categories
-  async getBlogCategories(): Promise<BlogCategory[]> {
-    return db.select().from(blogCategories);
+  async getBlogCategories(): Promise<SimpleBlogCategory[]> {
+    // Use raw SQL to avoid schema mismatch
+    const results = await db.execute(
+      'SELECT id, name, slug, description FROM blog_categories'
+    );
+    return results;
   }
   
-  async getBlogCategory(id: number): Promise<BlogCategory | undefined> {
-    const results = await db.select().from(blogCategories).where(eq(blogCategories.id, id));
+  async getBlogCategory(id: number): Promise<SimpleBlogCategory | undefined> {
+    // Use raw SQL to avoid schema mismatch
+    const results = await db.execute(
+      'SELECT id, name, slug, description FROM blog_categories WHERE id = $1',
+      [id]
+    );
     return results[0];
   }
   
-  async createBlogCategory(category: InsertBlogCategory): Promise<BlogCategory> {
-    const result = await db.insert(blogCategories).values(category).returning();
-    return result[0];
+  async createBlogCategory(category: InsertBlogCategory): Promise<SimpleBlogCategory> {
+    // Use raw SQL to avoid schema mismatch
+    await db.execute(
+      'INSERT INTO blog_categories (name, slug, description) VALUES ($1, $2, $3)',
+      [category.name, category.slug, category.description || null]
+    );
+    
+    // Fetch the newly created category
+    const results = await db.execute(
+      'SELECT id, name, slug, description FROM blog_categories WHERE slug = $1',
+      [category.slug]
+    );
+    return results[0];
   }
   
   // Blog Tags
-  async getBlogTags(): Promise<BlogTag[]> {
-    return db.select().from(blogTags);
+  async getBlogTags(): Promise<SimpleBlogTag[]> {
+    // Use raw SQL to avoid schema mismatch
+    const results = await db.execute(
+      'SELECT id, name, slug FROM blog_tags'
+    );
+    return results;
   }
   
-  async getBlogTag(id: number): Promise<BlogTag | undefined> {
-    const results = await db.select().from(blogTags).where(eq(blogTags.id, id));
+  async getBlogTag(id: number): Promise<SimpleBlogTag | undefined> {
+    // Use raw SQL to avoid schema mismatch
+    const results = await db.execute(
+      'SELECT id, name, slug FROM blog_tags WHERE id = $1',
+      [id]
+    );
     return results[0];
   }
   
-  async createBlogTag(tag: InsertBlogTag): Promise<BlogTag> {
-    const result = await db.insert(blogTags).values(tag).returning();
-    return result[0];
+  async createBlogTag(tag: InsertBlogTag): Promise<SimpleBlogTag> {
+    // Use raw SQL to avoid schema mismatch
+    await db.execute(
+      'INSERT INTO blog_tags (name, slug) VALUES ($1, $2)',
+      [tag.name, tag.slug]
+    );
+    
+    // Fetch the newly created tag
+    const results = await db.execute(
+      'SELECT id, name, slug FROM blog_tags WHERE slug = $1',
+      [tag.slug]
+    );
+    return results[0];
   }
   
   // Blog Post Categories
-  async getBlogPostCategories(postId: number): Promise<BlogCategory[]> {
+  async getBlogPostCategories(postId: number): Promise<SimpleBlogCategory[]> {
     const results = await db
       .select({
         id: blogCategories.id,
         name: blogCategories.name,
         slug: blogCategories.slug,
         description: blogCategories.description
+        // Removed createdAt field as it seems to be missing in the database
       })
       .from(blogCategories)
       .innerJoin(blogPostCategories, 
@@ -334,12 +520,13 @@ export class DBStorage implements IStorage {
   }
   
   // Blog Post Tags
-  async getBlogPostTags(postId: number): Promise<BlogTag[]> {
+  async getBlogPostTags(postId: number): Promise<SimpleBlogTag[]> {
     const results = await db
       .select({
         id: blogTags.id,
         name: blogTags.name,
         slug: blogTags.slug
+        // Removed createdAt field as it seems to be missing in the database
       })
       .from(blogTags)
       .innerJoin(blogPostTags, 
@@ -490,10 +677,31 @@ export class DBStorage implements IStorage {
     const imageToDelete = await db.select().from(serviceGallery).where(eq(serviceGallery.id, id));
     
     if (imageToDelete.length > 0) {
-      // Delete image from UploadThing if applicable
-      await FileManager.deleteFile(imageToDelete[0].imageUrl);
+      const imageUrl = imageToDelete[0].imageUrl;
+      const serviceId = imageToDelete[0].serviceId;
       
-      // Then delete from database
+      console.log(`[dbStorage] Processing deletion of service gallery image (ID: ${id}, service: ${serviceId})`);
+      
+      // Check if this image is used elsewhere before deleting it from UploadThing
+      const isUsedElsewhere = await this.isImageUsedElsewhere(imageUrl, id);
+      
+      if (isUsedElsewhere) {
+        console.log(`[dbStorage] Preserving file ${imageUrl} as it is referenced elsewhere`);
+      } else {
+        console.log(`[dbStorage] Image not used elsewhere, deleting from UploadThing: ${imageUrl}`);
+        // Extract UploadThing key and delete the file
+        const key = extractUploadThingKeyFromUrl(imageUrl);
+        if (key) {
+          try {
+            console.log(`[dbStorage] Deleting UploadThing file with key: ${key}`);
+            await FileManager.deleteFile(imageUrl);
+          } catch (error) {
+            console.error(`[dbStorage] Error deleting file from UploadThing:`, error);
+          }
+        }
+      }
+      
+      // Delete from database
       const result = await db.delete(serviceGallery).where(eq(serviceGallery.id, id)).returning();
       return result.length > 0;
     }
@@ -505,12 +713,40 @@ export class DBStorage implements IStorage {
     // First get all gallery images for this service
     const imagesToDelete = await db.select().from(serviceGallery).where(eq(serviceGallery.serviceId, serviceId));
     
-    // Delete each image from UploadThing if applicable
+    console.log(`[dbStorage] Processing deletion of all gallery images for service ${serviceId} (${imagesToDelete.length} images)`);
+    
+    // Check and delete each image safely
     for (const image of imagesToDelete) {
-      await FileManager.deleteFile(image.imageUrl);
+      const imageUrl = image.imageUrl;
+      
+      // Check if this image is used elsewhere in other service galleries
+      const otherImagesWithSameUrl = await db.select().from(serviceGallery)
+        .where(and(
+          ne(serviceGallery.serviceId, serviceId),
+          eq(serviceGallery.imageUrl, imageUrl)
+        ));
+      
+      // Also check if this image is used in other galleries (projects, blogs)
+      const projectGalleryWithSameUrl = await db.select().from(projectGallery)
+        .where(eq(projectGallery.imageUrl, imageUrl));
+        
+      const blogGalleryWithSameUrl = await db.select().from(blogGallery)
+        .where(eq(blogGallery.imageUrl, imageUrl));
+      
+      const isImageUsedElsewhere = 
+        otherImagesWithSameUrl.length > 0 || 
+        projectGalleryWithSameUrl.length > 0 || 
+        blogGalleryWithSameUrl.length > 0;
+      
+      if (isImageUsedElsewhere) {
+        console.log(`[dbStorage] Preserving file ${imageUrl} as it's used elsewhere in the system`);
+      } else {
+        console.log(`[dbStorage] File ${imageUrl} is not used elsewhere, deleting from storage`);
+        await FileManager.deleteFile(imageUrl);
+      }
     }
     
-    // Then delete from database
+    // Delete all gallery entries from database
     const result = await db.delete(serviceGallery)
       .where(eq(serviceGallery.serviceId, serviceId))
       .returning();
@@ -575,6 +811,14 @@ export class DBStorage implements IStorage {
       .returning();
     return result;
   }
+  
+  async updateNewsletterSubscriberStatus(id: number, subscribed: boolean): Promise<NewsletterSubscriber | undefined> {
+    const [result] = await db.update(newsletterSubscribers)
+      .set({ subscribed })
+      .where(eq(newsletterSubscribers.id, id))
+      .returning();
+    return result;
+  }
 
   async deleteNewsletterSubscriber(id: number): Promise<boolean> {
     const result = await db.delete(newsletterSubscribers)
@@ -623,10 +867,39 @@ export class DBStorage implements IStorage {
   }
 
   async deleteQuoteRequest(id: number): Promise<boolean> {
+    // Delete all attachments first (cascade should handle this, but let's be explicit)
+    await this.deleteAllQuoteRequestAttachments(id);
+    
     const result = await db.delete(quoteRequests)
       .where(eq(quoteRequests.id, id))
       .returning();
     return result.length > 0;
+  }
+  
+  // Quote Request Attachments
+  async getQuoteRequestAttachments(quoteRequestId: number): Promise<QuoteRequestAttachment[]> {
+    return db.select()
+      .from(quoteRequestAttachments)
+      .where(eq(quoteRequestAttachments.quoteRequestId, quoteRequestId));
+  }
+  
+  async createQuoteRequestAttachment(attachment: InsertQuoteRequestAttachment): Promise<QuoteRequestAttachment> {
+    const [result] = await db.insert(quoteRequestAttachments).values(attachment).returning();
+    return result;
+  }
+  
+  async deleteQuoteRequestAttachment(id: number): Promise<boolean> {
+    const result = await db.delete(quoteRequestAttachments)
+      .where(eq(quoteRequestAttachments.id, id))
+      .returning();
+    return result.length > 0;
+  }
+  
+  async deleteAllQuoteRequestAttachments(quoteRequestId: number): Promise<boolean> {
+    const result = await db.delete(quoteRequestAttachments)
+      .where(eq(quoteRequestAttachments.quoteRequestId, quoteRequestId))
+      .returning();
+    return true;
   }
 
   // Subcontractors

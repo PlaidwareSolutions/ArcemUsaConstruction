@@ -61,17 +61,23 @@ export function formatBytes(bytes: number, decimals: number = 2): string {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
-export function initializeRevealEffects() {
+export function initializeRevealEffects(activateImmediately = false) {
   const revealElements = () => {
     const reveals = document.querySelectorAll('.reveal');
     
     for (let i = 0; i < reveals.length; i++) {
-      const windowHeight = window.innerHeight;
-      const elementTop = reveals[i].getBoundingClientRect().top;
-      const elementVisible = 150;
-      
-      if (elementTop < windowHeight - elementVisible) {
+      if (activateImmediately) {
+        // Immediately activate all elements without checking position
         reveals[i].classList.add('active');
+      } else {
+        // Original behavior - activate based on scroll position
+        const windowHeight = window.innerHeight;
+        const elementTop = reveals[i].getBoundingClientRect().top;
+        const elementVisible = 150;
+        
+        if (elementTop < windowHeight - elementVisible) {
+          reveals[i].classList.add('active');
+        }
       }
     }
   };

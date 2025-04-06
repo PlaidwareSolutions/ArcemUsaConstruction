@@ -9,6 +9,7 @@ import { useForm } from "react-hook-form";
 import { scrollToTop } from '@/lib/utils';
 import { Search, Plus, Edit, Trash2, Check, X, User, UserX, ArrowUpDown, Upload } from "lucide-react";
 import AdminNav from '@/components/admin/AdminNav';
+import UploadThingFileUpload from "@/components/common/UploadThingFileUpload";
 
 import {
   Table,
@@ -69,8 +70,7 @@ export default function TeamMembersManagement() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
+  const [uploadedFileUrl, setUploadedFileUrl] = useState<string | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [photoRemoved, setPhotoRemoved] = useState(false);
   const [activeTab, setActiveTab] = useState("all"); // all, active, inactive
@@ -95,33 +95,6 @@ export default function TeamMembersManagement() {
     scrollToTop();
     document.title = 'Team Members Management - ARCEM';
   }, []);
-  
-  const uploadFile = async (file: File): Promise<string | undefined> => {
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to upload file');
-      }
-      
-      const data = await response.json();
-      return data.url;
-    } catch (error) {
-      console.error("Error uploading file:", error);
-      toast({
-        title: "Error",
-        description: "Failed to upload file. Please try again.",
-        variant: "destructive",
-      });
-      return undefined;
-    }
-  };
 
   const createForm = useForm<TeamMemberFormValues>({
     resolver: zodResolver(teamMemberFormSchema),
@@ -172,12 +145,13 @@ export default function TeamMembersManagement() {
 
   const onCreateSubmit = async (values: TeamMemberFormValues) => {
     try {
+      // UploadThing has already uploaded the file and set the URL in the form
+      // So we just use the values directly from the form
       let photoUrl = values.photo;
       
-      if (selectedFile) {
-        setIsUploading(true);
-        photoUrl = await uploadFile(selectedFile);
-        setIsUploading(false);
+      // Use the uploaded file URL if it exists
+      if (uploadedFileUrl) {
+        photoUrl = uploadedFileUrl;
       }
       
       await createTeamMember({
@@ -187,7 +161,7 @@ export default function TeamMembersManagement() {
       
       setIsCreateDialogOpen(false);
       createForm.reset();
-      setSelectedFile(null);
+      setUploadedFileUrl(null);
     } catch (error) {
       console.error("Error creating team member:", error);
     }
@@ -199,11 +173,9 @@ export default function TeamMembersManagement() {
     try {
       let photoUrl = values.photo;
       
-      // If file is selected, upload it and use the new URL
-      if (selectedFile) {
-        setIsUploading(true);
-        photoUrl = await uploadFile(selectedFile);
-        setIsUploading(false);
+      // Use the uploaded file URL if it exists
+      if (uploadedFileUrl) {
+        photoUrl = uploadedFileUrl;
       }
       
       // If photo was removed in the UI, set it to null
@@ -219,7 +191,7 @@ export default function TeamMembersManagement() {
       setIsEditDialogOpen(false);
       editForm.reset();
       setSelectedMember(null);
-      setSelectedFile(null);
+      setUploadedFileUrl(null);
       setPhotoRemoved(false);
     } catch (error) {
       console.error("Error updating team member:", error);
@@ -259,20 +231,33 @@ export default function TeamMembersManagement() {
     toggleActiveStatus(member.id);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setSelectedFile(e.target.files[0]);
-      setPhotoRemoved(false);
-    }
-  };
-
   const handleRemovePhoto = () => {
-    setSelectedFile(null);
+    setUploadedFileUrl(null);
     setPhotoRemoved(true);
     if (isEditDialogOpen) {
       editForm.setValue('photo', '');
     } else {
       createForm.setValue('photo', '');
+    }
+  };
+  
+  const handleFileUploadComplete = (files: {
+    fileName: string;
+    fileUrl: string;
+    fileKey: string;
+    fileSize: number;
+    fileType: string;
+  }[]) => {
+    if (files.length > 0) {
+      setUploadedFileUrl(files[0].fileUrl);
+      setPhotoRemoved(false);
+      
+      // Update the appropriate form with the new URL
+      if (isEditDialogOpen) {
+        editForm.setValue('photo', files[0].fileUrl);
+      } else {
+        createForm.setValue('photo', files[0].fileUrl);
+      }
     }
   };
 
@@ -583,24 +568,39 @@ export default function TeamMembersManagement() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Photo (Optional)</FormLabel>
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-col gap-4">
                       <FormControl>
-                        <div className="flex items-center gap-2">
-                          <Input 
-                            type="file" 
-                            accept="image/*" 
-                            onChange={handleFileChange}
-                            className="flex-1"
+                        <div className="space-y-4">
+                          <UploadThingFileUpload
+                            onUploadComplete={handleFileUploadComplete}
+                            uploadType="imageUploader"
+                            maxFiles={1}
+                            maxFileSize={4}
+                            allowedFileTypes={['image/jpeg', 'image/png', 'image/webp']}
                           />
-                          {selectedFile && (
-                            <Button 
-                              type="button" 
-                              variant="outline" 
-                              onClick={handleRemovePhoto}
-                              className="shrink-0"
-                            >
-                              Remove
-                            </Button>
+                          
+                          {uploadedFileUrl && (
+                            <div className="flex items-center justify-between p-3 border rounded-lg">
+                              <div className="flex items-center gap-3">
+                                <img 
+                                  src={uploadedFileUrl} 
+                                  alt="Preview" 
+                                  className="w-12 h-12 rounded-md object-cover" 
+                                />
+                                <span className="text-sm font-medium truncate max-w-[180px]">
+                                  Team Member Photo
+                                </span>
+                              </div>
+                              <Button 
+                                type="button" 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={handleRemovePhoto}
+                                className="shrink-0"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
                           )}
                         </div>
                       </FormControl>
@@ -635,8 +635,8 @@ export default function TeamMembersManagement() {
               />
 
               <DialogFooter>
-                <Button type="submit" disabled={isCreating || isUploading}>
-                  {isCreating || isUploading ? "Creating..." : "Add Team Member"}
+                <Button type="submit" disabled={isCreating}>
+                  {isCreating ? "Creating..." : "Add Team Member"}
                 </Button>
               </DialogFooter>
             </form>
@@ -774,42 +774,65 @@ export default function TeamMembersManagement() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Photo</FormLabel>
-                    <div className="flex flex-col gap-2">
-                      {selectedMember?.photo && !photoRemoved && !selectedFile && (
-                        <div className="flex items-center gap-3">
-                          <img 
-                            src={selectedMember.photo} 
-                            alt={selectedMember.name}
-                            className="w-16 h-16 object-cover rounded-md" 
-                          />
+                    <div className="flex flex-col gap-4">
+                      {/* Current photo display */}
+                      {selectedMember?.photo && !photoRemoved && !uploadedFileUrl && (
+                        <div className="flex items-center justify-between p-3 border rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <img 
+                              src={selectedMember.photo} 
+                              alt={selectedMember.name}
+                              className="w-12 h-12 object-cover rounded-md" 
+                            />
+                            <span className="text-sm font-medium truncate max-w-[180px]">
+                              Current Photo
+                            </span>
+                          </div>
                           <Button
                             type="button"
-                            variant="outline"
+                            variant="ghost"
                             size="sm"
                             onClick={handleRemovePhoto}
                           >
-                            Remove Current Photo
+                            <X className="h-4 w-4" />
                           </Button>
                         </div>
                       )}
 
+                      {/* Upload new photo */}
                       <FormControl>
-                        <div className="flex items-center gap-2">
-                          <Input 
-                            type="file" 
-                            accept="image/*" 
-                            onChange={handleFileChange}
-                            className="flex-1"
+                        <div className="space-y-4">
+                          <UploadThingFileUpload
+                            onUploadComplete={handleFileUploadComplete}
+                            uploadType="imageUploader"
+                            maxFiles={1}
+                            maxFileSize={4}
+                            allowedFileTypes={['image/jpeg', 'image/png', 'image/webp']}
                           />
-                          {selectedFile && (
-                            <Button 
-                              type="button" 
-                              variant="outline" 
-                              onClick={handleRemovePhoto}
-                              className="shrink-0"
-                            >
-                              Remove
-                            </Button>
+                          
+                          {/* New uploaded photo preview */}
+                          {uploadedFileUrl && (
+                            <div className="flex items-center justify-between p-3 border rounded-lg">
+                              <div className="flex items-center gap-3">
+                                <img 
+                                  src={uploadedFileUrl} 
+                                  alt="Preview" 
+                                  className="w-12 h-12 rounded-md object-cover" 
+                                />
+                                <span className="text-sm font-medium truncate max-w-[180px]">
+                                  New Photo
+                                </span>
+                              </div>
+                              <Button 
+                                type="button" 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={handleRemovePhoto}
+                                className="shrink-0"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
                           )}
                         </div>
                       </FormControl>
@@ -844,8 +867,8 @@ export default function TeamMembersManagement() {
               />
 
               <DialogFooter>
-                <Button type="submit" disabled={isUpdating || isUploading}>
-                  {isUpdating || isUploading ? "Updating..." : "Update Team Member"}
+                <Button type="submit" disabled={isUpdating}>
+                  {isUpdating ? "Updating..." : "Update Team Member"}
                 </Button>
               </DialogFooter>
             </form>

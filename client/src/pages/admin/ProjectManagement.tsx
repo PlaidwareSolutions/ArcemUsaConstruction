@@ -5,11 +5,10 @@ import { scrollToTop } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Search, Plus, Edit, Trash2, Star, StarOff, AlertTriangle, Image } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, Star, StarOff, AlertTriangle, Image, FileEdit } from 'lucide-react';
 import AdminNav from '@/components/admin/AdminNav';
-import ProjectForm from '@/components/admin/ProjectForm';
-import NewProjectForm from '@/components/admin/NewProjectForm';
 import ExportButton from '@/components/admin/ExportButton';
+import SimpleProjectForm from '@/components/admin/SimpleProjectForm';
 import { 
   Dialog,
   DialogContent, 
@@ -196,7 +195,7 @@ const ProjectManagement = () => {
           <div className="flex-1">
             {/* Add/Edit Project Form */}
             {isAdding || isEditing ? (
-              <NewProjectForm 
+              <SimpleProjectForm 
                 projectId={currentEditId} 
                 onClose={handleCloseForm} 
               />

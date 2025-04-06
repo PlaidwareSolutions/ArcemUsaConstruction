@@ -173,7 +173,7 @@ const Subcontractors = () => {
 
     scrollToTop();
     document.title = "Subcontractors & Vendors - ARCEM";
-    initializeRevealEffects();
+    initializeRevealEffects(true);
   }, [location]);
 
   const form = useForm<FormValues>({

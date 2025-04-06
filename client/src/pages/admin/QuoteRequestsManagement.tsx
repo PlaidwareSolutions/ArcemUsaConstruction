@@ -36,14 +36,18 @@ import {
   Eye, 
   CheckCircle2, 
   Download,
-  Filter
+  Filter,
+  FileText,
+  Image,
+  ExternalLink
 } from "lucide-react";
 import ExportButton from "@/components/admin/ExportButton";
 import AdminNav from "@/components/admin/AdminNav";
 import { apiRequest } from "@/lib/queryClient";
-import { QuoteRequest } from "@shared/schema";
+import { QuoteRequest, QuoteRequestAttachment } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { formatDate, scrollToTop } from "@/lib/utils";
+import { useSingleQuoteRequest, QuoteRequestWithAttachments } from "@/hooks/useSingleQuoteRequest";
 
 const QuoteRequestsManagement = () => {
   const { toast } = useToast();
@@ -52,7 +56,16 @@ const QuoteRequestsManagement = () => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [quoteToDelete, setQuoteToDelete] = useState<QuoteRequest | null>(null);
   const [quoteToView, setQuoteToView] = useState<QuoteRequest | null>(null);
+  const [selectedQuoteId, setSelectedQuoteId] = useState<number | undefined>(undefined);
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  
+  // Fetch single quote request with attachments when viewing details
+  const { quoteRequest, isLoading: isLoadingDetails } = useSingleQuoteRequest(selectedQuoteId);
+  
+  // Type guard to ensure quoteRequest has expected properties
+  const isValidQuoteRequest = (data: any): data is QuoteRequestWithAttachments => {
+    return data && typeof data === 'object' && 'id' in data;
+  };
 
   useEffect(() => {
     scrollToTop();
@@ -192,6 +205,7 @@ const QuoteRequestsManagement = () => {
   // Handle view quote details
   const viewQuoteDetails = (quote: QuoteRequest) => {
     setQuoteToView(quote);
+    setSelectedQuoteId(quote.id);
     // If not reviewed yet, mark as reviewed
     if (!quote.reviewed) {
       markAsReviewedMutation.mutate(quote.id);
@@ -367,7 +381,15 @@ const QuoteRequestsManagement = () => {
       </div>
       
       {/* Quote Details Dialog */}
-      <Dialog open={!!quoteToView} onOpenChange={(open) => !open && setQuoteToView(null)}>
+      <Dialog 
+        open={!!quoteToView} 
+        onOpenChange={(open) => {
+          if (!open) {
+            setQuoteToView(null);
+            setSelectedQuoteId(undefined);
+          }
+        }}
+      >
         <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>Quote Request Details</DialogTitle>
@@ -376,7 +398,128 @@ const QuoteRequestsManagement = () => {
             </DialogDescription>
           </DialogHeader>
           
-          {quoteToView && (
+          {isLoadingDetails ? (
+            <div className="flex justify-center items-center h-64">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : quoteRequest && isValidQuoteRequest(quoteRequest) ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-semibold text-sm text-muted-foreground">Contact Information</h3>
+                  <div className="mt-1 p-3 bg-gray-50 rounded-md">
+                    <p className="font-semibold">{quoteRequest.name}</p>
+                    <p>{quoteRequest.email}</p>
+                    <p>{quoteRequest.phone || "No phone provided"}</p>
+                    {quoteRequest.company && <p>Company: {quoteRequest.company}</p>}
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className="font-semibold text-sm text-muted-foreground">Project Details</h3>
+                  <div className="mt-1 p-3 bg-gray-50 rounded-md">
+                    <p><span className="font-semibold">Type:</span> {quoteRequest.projectType}</p>
+                    {quoteRequest.projectSize && (
+                      <p><span className="font-semibold">Size:</span> {quoteRequest.projectSize}</p>
+                    )}
+                    {quoteRequest.budget && (
+                      <p><span className="font-semibold">Budget:</span> {quoteRequest.budget}</p>
+                    )}
+                    {quoteRequest.timeframe && (
+                      <p><span className="font-semibold">Timeframe:</span> {quoteRequest.timeframe}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <h3 className="font-semibold text-sm text-muted-foreground">Project Description</h3>
+                <div className="mt-1 p-3 bg-gray-50 rounded-md max-h-[200px] overflow-y-auto">
+                  <p>{quoteRequest.description || "No description provided"}</p>
+                </div>
+              </div>
+              
+              {/* Attachments Section */}
+              {quoteRequest.attachments && quoteRequest.attachments.length > 0 && (
+                <div className="md:col-span-2">
+                  <h3 className="font-semibold text-sm text-muted-foreground">Attachments</h3>
+                  <div className="mt-1 p-4 bg-gray-50 rounded-md">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {quoteRequest.attachments.map((attachment, index: number) => (
+                        <div key={index} className="flex flex-col items-center p-3 border rounded-lg bg-white">
+                          {attachment.fileType.match(/^(jpg|jpeg|png|webp|gif)$/) ? (
+                            <div className="relative w-full h-32 bg-gray-100 rounded-md overflow-hidden mb-2">
+                              <Image className="w-8 h-8 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-gray-400" />
+                              <a 
+                                href={attachment.fileUrl} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="absolute inset-0 flex items-center justify-center hover:bg-black/5 transition-colors"
+                              >
+                                <img 
+                                  src={attachment.fileUrl} 
+                                  alt={`Attachment ${index + 1}`} 
+                                  className="max-h-full max-w-full object-contain"
+                                />
+                              </a>
+                            </div>
+                          ) : (
+                            <div className="w-full h-32 flex items-center justify-center bg-gray-100 rounded-md mb-2">
+                              <FileText className="w-12 h-12 text-red-500" />
+                            </div>
+                          )}
+                          <div className="w-full">
+                            <p className="text-sm font-medium truncate text-center">{attachment.fileName}</p>
+                            <p className="text-xs text-gray-500 text-center">
+                              {Math.round(attachment.fileSize / 1024).toLocaleString()} KB
+                            </p>
+                            <div className="mt-2 text-center">
+                              <a 
+                                href={attachment.fileUrl} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center text-xs text-blue-600 hover:text-blue-800"
+                              >
+                                <ExternalLink className="w-3 h-3 mr-1" />
+                                Open
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              <div className="md:col-span-2">
+                <h3 className="font-semibold text-sm text-muted-foreground">Update Status</h3>
+                <div className="flex flex-wrap items-center mt-1 gap-4">
+                  <Select
+                    defaultValue={quoteRequest.status || 'pending'}
+                    onValueChange={(value) => handleStatusChange(quoteRequest.id, value)}
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="reviewing">Reviewing</SelectItem>
+                      <SelectItem value="accepted">Accepted</SelectItem>
+                      <SelectItem value="rejected">Rejected</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <span className="text-sm text-muted-foreground flex items-center">
+                    Current: {getStatusBadge(quoteRequest.status || 'pending')}
+                  </span>
+                  {!quoteRequest.reviewed && (
+                    <Badge variant="outline" className="ml-auto">Unreviewed</Badge>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : quoteToView && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
               <div className="space-y-4">
                 <div>
@@ -446,9 +589,12 @@ const QuoteRequestsManagement = () => {
             <DialogClose asChild>
               <Button variant="outline">Close</Button>
             </DialogClose>
-            {quoteToView && !quoteToView.reviewed && (
+            {((quoteRequest && !quoteRequest.reviewed) || (quoteToView && !quoteToView.reviewed)) && (
               <Button
-                onClick={() => markAsReviewedMutation.mutate(quoteToView.id)}
+                onClick={() => {
+                  const id = quoteRequest?.id || quoteToView?.id;
+                  if (id) markAsReviewedMutation.mutate(id);
+                }}
                 disabled={markAsReviewedMutation.isPending}
                 variant="default"
               >

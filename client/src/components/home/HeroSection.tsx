@@ -82,9 +82,8 @@ const HeroSection = () => {
 aria-label="Construction site timelapse video showing building progress"
         >
           <source
-            src="/uploads/hero/herovideo.mp4"
-            /* src="https://video.wixstatic.com/video/6331e9_e98391c4a6dc4d85b10501c7aac5caee/1080p/mp4/file.mp4" */
-type="video/mp4"
+            src="/uploads/hero/arcemusa-video.mp4"
+            type="video/mp4"
           />
           Your browser does not support the video tag.
         </video>

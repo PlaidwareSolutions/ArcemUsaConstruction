@@ -47,7 +47,7 @@ const isAuthenticated = (req: Request) => {
 // Define the file router with authentication and validation
 export const uploadRouter = {
   // Define a route for image upload
-  imageUploader: f({ image: { maxFileSize: "8MB", maxFileCount: 10 } })
+  imageUploader: f({ image: { maxFileSize: "16MB", maxFileCount: 10 } })
     // Set permissions and get metadata to identify the user
     .middleware(({ req }) => {
       try {
@@ -80,6 +80,43 @@ export const uploadRouter = {
       return { 
         url: file.url, // Keep for backwards compatibility
         ufsUrl: file.ufsUrl || file.url, // Prefer the new URL property
+        key: file.key,
+        name: file.name,
+        size: file.size
+      };
+    }),
+    
+  // Define a route for document uploads (images and PDFs) for quote requests
+  quoteDocumentUploader: f({
+    image: { maxFileSize: "8MB", maxFileCount: 3 },
+    pdf: { maxFileSize: "8MB", maxFileCount: 3 }
+  })
+    .middleware(({ req }) => {
+      try {
+        const session = isAuthenticated(req as any);
+        console.log("📤 Quote document upload middleware executed for user:", session.userId);
+        return { userId: session.userId };
+      } catch (error) {
+        console.error("❌ Quote document upload authorization error:", error);
+        // For development, allow uploads even if authentication fails
+        return { userId: 1 };
+      }
+    })
+    .onUploadComplete(({ metadata, file }) => {
+      console.log(`✅ Quote document upload complete from user ${metadata?.userId || 'unknown'}`);
+      
+      console.log("📁 Quote document file details:", {
+        name: file.name,
+        size: (file.size / 1024 / 1024).toFixed(2) + " MB",
+        key: file.key,
+        type: file.name.split('.').pop(),
+        url: file.url?.substring(0, 50) + "...",
+        ufsUrl: file.ufsUrl ? (file.ufsUrl.substring(0, 50) + "...") : 'Not available'
+      });
+      
+      return { 
+        url: file.url,
+        ufsUrl: file.ufsUrl || file.url,
         key: file.key,
         name: file.name,
         size: file.size

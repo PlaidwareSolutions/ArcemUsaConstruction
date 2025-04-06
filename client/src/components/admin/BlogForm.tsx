@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useBlog } from '@/hooks/useBlog';
@@ -20,19 +20,14 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Loader2, Images, Upload } from 'lucide-react';
-import FileUpload from '@/components/common/FileUpload';
+import { ArrowLeft, Loader2, PlusCircle } from 'lucide-react';
 import { generateSlug } from '@/lib/utils';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import BlogGalleryManager from './BlogGalleryManager';
+
+import BlogFeaturedImageUpload from './BlogFeaturedImageUpload';
+import CategoryCreator from './CategoryCreator';
+import TagCreator from './TagCreator';
+import RichTextEditor from './RichTextEditor';
 
 interface BlogFormProps {
   postId?: number;
@@ -40,7 +35,10 @@ interface BlogFormProps {
 }
 
 const BlogForm = ({ postId, onClose }: BlogFormProps) => {
-  const [activeTab, setActiveTab] = useState("content");
+  const [categoryIds, setCategoryIds] = useState<number[]>([]);
+  const [tagIds, setTagIds] = useState<number[]>([]);
+  const [formInitialized, setFormInitialized] = useState(false);
+
   const { post, isLoading, saveBlogPost, isSubmitting, getPostCategoryIds, getPostTagIds } = useBlog(postId);
   const { 
     categories, 
@@ -57,7 +55,6 @@ const BlogForm = ({ postId, onClose }: BlogFormProps) => {
       content: '',
       excerpt: '',
       image: '',
-      category: '',
       author: '',
       published: true,
       categoryIds: [],
@@ -65,36 +62,41 @@ const BlogForm = ({ postId, onClose }: BlogFormProps) => {
     },
   });
 
-  // Load categories and tags for the post when editing
-  useEffect(() => {
-    const loadCategoriesAndTags = async () => {
-      if (post && postId) {
-        try {
-          const categoryIds = await getPostCategoryIds(postId);
-          const tagIds = await getPostTagIds(postId);
-          
-          form.reset({
-            title: post.title,
-            slug: post.slug,
-            content: post.content,
-            excerpt: post.excerpt,
-            image: post.image,
-            category: post.category,
-            author: post.author,
-            published: post.published,
-            categoryIds,
-            tagIds
-          });
-        } catch (error) {
-          console.error("Error loading post relationships:", error);
-        }
+  // Load post data once on initial render
+  const loadPostData = useCallback(async () => {
+    if (post && postId && !formInitialized) {
+      try {
+        const fetchedCategoryIds = await getPostCategoryIds(postId);
+        const fetchedTagIds = await getPostTagIds(postId);
+        
+        setCategoryIds(fetchedCategoryIds);
+        setTagIds(fetchedTagIds);
+        
+        form.reset({
+          title: post.title,
+          slug: post.slug,
+          content: post.content,
+          excerpt: post.excerpt,
+          image: post.image,
+          author: post.author,
+          published: post.published,
+          categoryIds: fetchedCategoryIds,
+          tagIds: fetchedTagIds
+        });
+        
+        setFormInitialized(true);
+      } catch (error) {
+        console.error("Error loading post relationships:", error);
       }
-    };
-    
-    if (post) {
-      loadCategoriesAndTags();
     }
-  }, [form, post, postId, getPostCategoryIds, getPostTagIds]);
+  }, [form, post, postId, getPostCategoryIds, getPostTagIds, formInitialized]);
+  
+  // Initialize form with post data
+  useEffect(() => {
+    if (post && !formInitialized) {
+      loadPostData();
+    }
+  }, [post, formInitialized, loadPostData]);
 
   // Generate slug from title when title changes
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -107,9 +109,46 @@ const BlogForm = ({ postId, onClose }: BlogFormProps) => {
   };
 
   const onSubmit = async (data: ExtendedInsertBlogPost) => {
-    await saveBlogPost(data);
-    if (!isSubmitting) {
-      onClose();
+    try {
+      // If creating a new post and we have an image, prepare to add it to gallery after post creation
+      const imageUrl = data.image || '';
+      const shouldAddToGallery = !postId && imageUrl;
+      
+      // Save the blog post first
+      const savedPost = await saveBlogPost(data);
+      
+      // If this is a new post and we have an image, add it to the gallery
+      if (shouldAddToGallery && savedPost && typeof savedPost === 'object' && 'id' in savedPost) {
+        const newPostId = savedPost.id;
+        console.log(`Adding featured image to gallery for new post ID ${newPostId}`);
+        
+        try {
+          // Add the featured image to the gallery with order=0 to mark it as the main image
+          const response = await fetch(`/api/blog/${newPostId}/gallery`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              imageUrl,
+              caption: "Featured image",
+              order: 0
+            })
+          });
+          
+          if (!response.ok) {
+            throw new Error(`Failed to add image to gallery: ${response.statusText}`);
+          }
+          
+          console.log("Successfully added featured image to gallery for new post:", newPostId);
+        } catch (error) {
+          console.error("Error adding image to gallery for new post:", error);
+        }
+      }
+      
+      if (!isSubmitting) {
+        onClose();
+      }
+    } catch (error) {
+      console.error("Error saving blog post:", error);
     }
   };
 
@@ -149,8 +188,8 @@ const BlogForm = ({ postId, onClose }: BlogFormProps) => {
         </h1>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-6">
-        <div className="w-full md:w-2/3">
+      <div className="flex flex-col gap-6">
+        <div className="w-full">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
@@ -208,53 +247,51 @@ const BlogForm = ({ postId, onClose }: BlogFormProps) => {
                 )}
               />
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="category"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Legacy Category (Text)</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="E.g., Construction, Architecture" 
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        For backwards compatibility
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="image"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Featured Image</FormLabel>
-                      <FormControl>
-                        <FileUpload
-                          onUploadComplete={(fileUrls, sessionId) => {
-                            const urls = Array.isArray(fileUrls) ? fileUrls : [fileUrls];
-                            if (urls.length > 0) {
-                              field.onChange(urls[0]);
-                            }
-                          }}
-                          multiple={false}
-                          accept="image/*"
-                          maxSizeMB={5}
-                          buttonText="Upload Featured Image"
-                          helpText="Select or drag an image file"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              <FormField
+                control={form.control}
+                name="image"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Featured Image</FormLabel>
+                    <FormControl>
+                      <BlogFeaturedImageUpload
+                        currentImageUrl={field.value}
+                        onImageUpload={(imageUrl) => {
+                          // Update form field with new image URL
+                          field.onChange(imageUrl);
+                          
+                          // If we have a post ID and a valid image URL, update the gallery
+                          if (postId && imageUrl) {
+                            // Using direct API call for consistency since useBlog can't be called within render
+                            fetch(`/api/blog/${postId}/gallery`, {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                imageUrl,
+                                caption: "Featured image",
+                                order: 0
+                              })
+                            })
+                              .then(response => {
+                                if (!response.ok) {
+                                  throw new Error(`Failed to add image to gallery: ${response.statusText}`);
+                                }
+                                console.log("Updated featured image in gallery for post:", postId);
+                              })
+                              .catch(error => {
+                                console.error("Error updating image in gallery:", error);
+                              });
+                          }
+                        }}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      This image will be displayed on blog listings and at the top of the post
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               
               <FormField
                 control={form.control}
@@ -272,29 +309,41 @@ const BlogForm = ({ postId, onClose }: BlogFormProps) => {
                         <div className="text-sm text-muted-foreground">No categories available</div>
                       ) : (
                         <div className="grid grid-cols-2 gap-3">
-                          {categories.map((category) => (
-                            <div key={category.id} className="flex items-center space-x-2">
-                              <Checkbox
-                                id={`category-${category.id}`}
-                                checked={field.value?.includes(category.id)}
-                                onCheckedChange={(checked) => {
-                                  const currentValues = field.value || [];
-                                  const newValues = checked
-                                    ? [...currentValues, category.id]
-                                    : currentValues.filter((id) => id !== category.id);
-                                  field.onChange(newValues);
-                                }}
-                              />
-                              <label
-                                htmlFor={`category-${category.id}`}
-                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                              >
-                                {category.name}
-                              </label>
-                            </div>
-                          ))}
+                          {categories.map((category) => {
+                            // Check against local state instead of using form value directly
+                            const isChecked = field.value?.includes(category.id);
+                            return (
+                              <div key={category.id} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`category-${category.id}`}
+                                  checked={isChecked}
+                                  onCheckedChange={(checked) => {
+                                    const newValues = checked
+                                      ? [...(field.value || []), category.id]
+                                      : (field.value || []).filter((id) => id !== category.id);
+                                    
+                                    // Update form value
+                                    field.onChange(newValues);
+                                  }}
+                                />
+                                <label
+                                  htmlFor={`category-${category.id}`}
+                                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                >
+                                  {category.name}
+                                </label>
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
+                      <CategoryCreator 
+                        onCategoryCreated={(categoryId, categoryName) => {
+                          // Add the newly created category to the selected categories
+                          const newValues = [...(field.value || []), categoryId];
+                          field.onChange(newValues);
+                        }}
+                      />
                       <FormDescription>
                         Select one or more categories for this blog post
                       </FormDescription>
@@ -321,6 +370,7 @@ const BlogForm = ({ postId, onClose }: BlogFormProps) => {
                       ) : (
                         <div className="flex flex-wrap gap-2 p-2 border rounded-md">
                           {tags.map((tag) => {
+                            // Check against form value
                             const isSelected = field.value?.includes(tag.id);
                             return (
                               <Badge
@@ -328,10 +378,11 @@ const BlogForm = ({ postId, onClose }: BlogFormProps) => {
                                 variant={isSelected ? "default" : "outline"}
                                 className={`cursor-pointer ${isSelected ? 'bg-primary' : ''}`}
                                 onClick={() => {
-                                  const currentValues = field.value || [];
                                   const newValues = isSelected
-                                    ? currentValues.filter((id) => id !== tag.id)
-                                    : [...currentValues, tag.id];
+                                    ? (field.value || []).filter((id) => id !== tag.id)
+                                    : [...(field.value || []), tag.id];
+                                  
+                                  // Update form value
                                   field.onChange(newValues);
                                 }}
                               >
@@ -341,6 +392,13 @@ const BlogForm = ({ postId, onClose }: BlogFormProps) => {
                           })}
                         </div>
                       )}
+                      <TagCreator 
+                        onTagCreated={(tagId, tagName) => {
+                          // Add the newly created tag to the selected tags
+                          const newValues = [...(field.value || []), tagId];
+                          field.onChange(newValues);
+                        }}
+                      />
                       <FormDescription>
                         Click tags to add or remove them from this blog post
                       </FormDescription>
@@ -360,7 +418,11 @@ const BlogForm = ({ postId, onClose }: BlogFormProps) => {
                       <Textarea 
                         placeholder="A brief summary of the post" 
                         rows={2}
-                        {...field} 
+                        value={field.value || ''}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
                       />
                     </FormControl>
                     <FormDescription>
@@ -378,12 +440,16 @@ const BlogForm = ({ postId, onClose }: BlogFormProps) => {
                   <FormItem>
                     <FormLabel>Content</FormLabel>
                     <FormControl>
-                      <Textarea 
-                        placeholder="Enter the full content of your blog post" 
-                        rows={10}
-                        {...field} 
+                      <RichTextEditor 
+                        value={field.value || ''}
+                        onChange={field.onChange}
+                        placeholder="Enter the full content of your blog post"
+                        className="min-h-[400px]"
                       />
                     </FormControl>
+                    <FormDescription>
+                      Use the toolbar to format your content with headings, lists, links, and more
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -434,28 +500,6 @@ const BlogForm = ({ postId, onClose }: BlogFormProps) => {
               </div>
             </form>
           </Form>
-        </div>
-
-        {/* Gallery Section (Integrated in the content page) */}
-        <div className="w-full md:w-1/3 bg-gray-50 rounded-lg p-4">
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold flex items-center">
-              <Images className="h-5 w-5 mr-2" />
-              Gallery Images
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              Add additional images for this blog post
-            </p>
-          </div>
-
-          {postId ? (
-            <BlogGalleryManager postId={postId} />
-          ) : (
-            <div className="text-center py-16 border border-dashed rounded-lg">
-              <Images className="h-12 w-12 mx-auto text-muted-foreground" />
-              <p className="mt-4 text-muted-foreground">Save the blog post first to add gallery images</p>
-            </div>
-          )}
         </div>
       </div>
     </div>

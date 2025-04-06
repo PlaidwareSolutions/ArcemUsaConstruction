@@ -20,7 +20,7 @@ const Services = () => {
   useEffect(() => {
     scrollToTop();
     document.title = 'Services - ARCEM';
-    const cleanup = initializeRevealEffects();
+    const cleanup = initializeRevealEffects(true);
     return cleanup;
   }, []);
 
@@ -56,22 +56,51 @@ const Services = () => {
   // Fetch gallery images for each service
   useEffect(() => {
     const fetchGalleryImages = async () => {
-      if (services && services.length > 0) {
-        const galleries: { [key: number]: ServiceGallery[] } = {};
-        
-        for (const service of services) {
-          try {
-            const response = await apiRequest('GET', `/api/services/${service.id}/gallery`);
-            const galleryData = await response.json();
+      if (!services || services.length === 0) return;
+      
+      console.log(`Starting to fetch gallery images for ${services.length} services...`);
+      const galleries: { [key: number]: ServiceGallery[] } = {};
+      
+      // For debugging - create a direct fetch to service 15's gallery which we know has images
+      try {
+        const directResponse = await fetch(`/api/services/15/gallery`);
+        const directData = await directResponse.json();
+        console.log(`DIRECT FETCH TEST - Service 15: Found ${directData.length} images:`, directData);
+      } catch (error) {
+        console.error("Direct fetch test failed:", error);
+      }
+      
+      // Process all services
+      for (const service of services) {
+        try {
+          console.log(`Fetching gallery for service ID ${service.id} (${service.title})`);
+          // Use standard fetch instead of apiRequest for consistency
+          const response = await fetch(`/api/services/${service.id}/gallery`);
+          
+          if (!response.ok) {
+            console.error(`Failed to fetch gallery for service ${service.id}: ${response.status} ${response.statusText}`);
+            galleries[service.id] = [];
+            continue;
+          }
+          
+          const galleryData = await response.json();
+          console.log(`Service ${service.id} (${service.title}): Found ${galleryData.length} gallery images`);
+          
+          if (galleryData && Array.isArray(galleryData) && galleryData.length > 0) {
+            console.log(`Gallery data for service ${service.id}:`, galleryData);
             galleries[service.id] = galleryData;
-          } catch (error) {
-            console.error(`Error fetching gallery for service ${service.id}:`, error);
+          } else {
+            console.log(`No gallery images for service ${service.id}`);
             galleries[service.id] = [];
           }
+        } catch (error) {
+          console.error(`Error fetching gallery for service ${service.id}:`, error);
+          galleries[service.id] = [];
         }
-        
-        setServiceGalleries(galleries);
       }
+      
+      console.log(`Finished fetching galleries. Setting state with data:`, galleries);
+      setServiceGalleries(galleries);
     };
     
     fetchGalleryImages();
@@ -79,51 +108,59 @@ const Services = () => {
   
   // Get service images from gallery or fallback to defaults
   const getServiceImages = (service: Service) => {
+    console.log(`Getting images for service ID: ${service.id}, title: ${service.title}`);
+    
     // If we have gallery images for this service, use them
     if (serviceGalleries[service.id] && serviceGalleries[service.id].length > 0) {
-      return serviceGalleries[service.id].map(image => image.imageUrl);
+      console.log(`Using ${serviceGalleries[service.id].length} gallery images for service ${service.id} (${service.title})`);
+      return serviceGalleries[service.id]
+        .sort((a, b) => (a.order || 0) - (b.order || 0)) // Sort by order if available
+        .map(image => image.imageUrl);
     }
     
+    console.log(`No gallery images found for service ${service.id} (${service.title}), using defaults`);
+    
     // Otherwise use default images based on service type
-    switch (service.title.toLowerCase()) {
-      case 'commercial construction':
-        return [
-          '/images/commercial1.jpg',
-          '/images/commercial2.jpg',
-          '/images/commercial3.jpg'
-        ];
-      case 'residential construction':
-        return [
-          '/images/residential1.jpg',
-          '/images/residential2.jpg',
-          '/images/residential3.jpg'
-        ];
-      case 'renovation & remodeling':
-        return [
-          '/images/renovation1.jpg',
-          '/images/renovation2.jpg',
-          '/images/renovation3.jpg'
-        ];
-      case 'architectural design':
-        return [
-          '/images/slider1.png',
-          '/images/slider2.png'
-        ];
-      case 'project management':
-        return [
-          '/images/slider3.png',
-          '/images/slider4.png'
-        ];
-      case 'construction consultation':
-        return [
-          '/images/slider5.png',
-          '/images/image_1741432012642.png'
-        ];
-      default:
-        return [
-          '/images/slider1.png',
-          '/images/slider2.png'
-        ];
+    const serviceTitle = service.title.toLowerCase();
+    
+    if (serviceTitle.includes('commercial')) {
+      return [
+        '/images/commercial1.jpg',
+        '/images/commercial2.jpg',
+        '/images/commercial3.jpg'
+      ];
+    } else if (serviceTitle.includes('residential')) {
+      return [
+        '/images/residential1.jpg',
+        '/images/residential2.jpg',
+        '/images/residential3.jpg'
+      ];
+    } else if (serviceTitle.includes('renovation') || serviceTitle.includes('remodeling')) {
+      return [
+        '/images/renovation1.jpg',
+        '/images/renovation2.jpg',
+        '/images/renovation3.jpg'
+      ];
+    } else if (serviceTitle.includes('design') || serviceTitle.includes('engineering')) {
+      return [
+        '/images/slider1.png',
+        '/images/slider2.png'
+      ];
+    } else if (serviceTitle.includes('management')) {
+      return [
+        '/images/slider3.png',
+        '/images/slider4.png'
+      ];
+    } else if (serviceTitle.includes('consultation')) {
+      return [
+        '/images/slider5.png',
+        '/images/image_1741432012642.png'
+      ];
+    } else {
+      return [
+        '/images/slider1.png',
+        '/images/slider2.png'
+      ];
     }
   };
 
@@ -133,7 +170,7 @@ const Services = () => {
       <div 
         className="relative h-[350px] flex items-center justify-center" 
         style={{
-          backgroundImage: "url('/uploads/images/services.jpg')",
+          backgroundImage: "url('/uploads/services/services.jpg')",
           backgroundSize: 'cover',
           backgroundPosition: 'center'
         }}
@@ -155,7 +192,7 @@ const Services = () => {
       {/* Services Overview */}
       <section className="py-20 bg-white">
         <div className="container mx-auto px-4 md:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16 reveal">
+          <div className="text-center max-w-3xl mx-auto mb-16 reveal active">
             <h2 className="text-sm font-montserrat text-[#1E90DB] mb-4">WHAT WE OFFER</h2>
             <h3 className="text-3xl md:text-4xl font-montserrat font-bold mb-6">Comprehensive Construction Solutions</h3>
             <p className="text-gray-600 leading-relaxed">
@@ -202,7 +239,7 @@ const Services = () => {
               {services?.map((service, index) => (
                 <div 
                   key={service.id}
-                  className={`flex flex-col ${index % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'} gap-12 items-center reveal`}
+                  className={`flex flex-col ${index % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'} gap-12 items-center reveal active`}
                 >
                   <div className="md:w-1/3">
                     <Carousel 
@@ -230,7 +267,9 @@ const Services = () => {
                                 src={image}
                                 alt={`${service.title} showcase ${i+1}`}
                                 className="w-full h-full object-cover transition-transform hover:scale-105 duration-500"
+                                onLoad={() => console.log(`Successfully loaded image: ${image}`)}
                                 onError={(e) => {
+                                  console.error(`Failed to load image: ${image}`);
                                   e.currentTarget.src = "https://placehold.co/600x400/e2e8f0/1e293b?text=Service+Image";
                                 }}
                               />
@@ -245,7 +284,7 @@ const Services = () => {
                   <div className="md:w-2/3">
                     <div className="flex items-center mb-4">
                       <div className="text-[#1E90DB]">
-                        {getIcon(service.icon, "small")}
+                        {getIcon(service.icon || "", "small")}
                       </div>
                       <h4 className="text-2xl font-montserrat font-bold">{service.title}</h4>
                     </div>
@@ -296,7 +335,7 @@ const Services = () => {
       {/* Our Process */}
       <section className="py-20 bg-gray-100">
         <div className="container mx-auto px-4 md:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16 reveal">
+          <div className="text-center max-w-3xl mx-auto mb-16 reveal active">
             <h2 className="text-sm font-montserrat text-[#1E90DB] mb-4">OUR PROCESS</h2>
             <h3 className="text-3xl md:text-4xl font-montserrat font-bold mb-6">How We Work</h3>
             <p className="text-gray-600 leading-relaxed">
@@ -305,7 +344,7 @@ const Services = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="bg-white p-8 shadow-lg hover-scale reveal">
+            <div className="bg-white p-8 shadow-lg hover-scale reveal active">
               <div className="w-12 h-12 bg-[#1E90DB] text-white rounded-full flex items-center justify-center font-montserrat font-bold text-xl mb-6">1</div>
               <h4 className="text-xl font-montserrat font-bold mb-4">Consultation</h4>
               <p className="text-gray-600 leading-relaxed">
@@ -313,7 +352,7 @@ const Services = () => {
               </p>
             </div>
             
-            <div className="bg-white p-8 shadow-lg hover-scale reveal">
+            <div className="bg-white p-8 shadow-lg hover-scale reveal active">
               <div className="w-12 h-12 bg-[#1E90DB] text-white rounded-full flex items-center justify-center font-montserrat font-bold text-xl mb-6">2</div>
               <h4 className="text-xl font-montserrat font-bold mb-4">Planning & Design</h4>
               <p className="text-gray-600 leading-relaxed">
@@ -321,7 +360,7 @@ const Services = () => {
               </p>
             </div>
             
-            <div className="bg-white p-8 shadow-lg hover-scale reveal">
+            <div className="bg-white p-8 shadow-lg hover-scale reveal active">
               <div className="w-12 h-12 bg-[#1E90DB] text-white rounded-full flex items-center justify-center font-montserrat font-bold text-xl mb-6">3</div>
               <h4 className="text-xl font-montserrat font-bold mb-4">Construction</h4>
               <p className="text-gray-600 leading-relaxed">
@@ -329,7 +368,7 @@ const Services = () => {
               </p>
             </div>
             
-            <div className="bg-white p-8 shadow-lg hover-scale reveal">
+            <div className="bg-white p-8 shadow-lg hover-scale reveal active">
               <div className="w-12 h-12 bg-[#1E90DB] text-white rounded-full flex items-center justify-center font-montserrat font-bold text-xl mb-6">4</div>
               <h4 className="text-xl font-montserrat font-bold mb-4">Completion & Support</h4>
               <p className="text-gray-600 leading-relaxed">
@@ -343,7 +382,7 @@ const Services = () => {
       {/* Contact CTA */}
       <section className="py-20 bg-black text-white">
         <div className="container mx-auto px-4 md:px-8 text-center">
-          <div className="max-w-3xl mx-auto reveal">
+          <div className="max-w-3xl mx-auto reveal active">
             <h2 className="text-3xl md:text-4xl font-montserrat font-bold mb-6">Ready to Discuss Your Project?</h2>
             <p className="text-lg mb-8">
               Contact us today to schedule a consultation with our team of experts.

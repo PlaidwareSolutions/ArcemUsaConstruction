@@ -1,6 +1,7 @@
 import express, { type Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { db } from "./db";
 import { FileManager, extractUploadThingKeyFromUrl } from "./utils/fileManager";
 import { 
   insertProjectSchema,
@@ -17,10 +18,15 @@ import {
   insertNewsletterSubscriberSchema,
   insertQuoteRequestSchema,
   insertServiceSchema,
+  newsletterSubscribers,
   insertServiceGallerySchema,
   insertSubcontractorSchema,
-  insertVendorSchema
+  insertVendorSchema,
+  blogPosts,
+  fileAttachmentSchema,
+  quoteRequestWithAttachmentsSchema
 } from "@shared/schema";
+import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { setupAuth } from "./auth";
 import { upload, getFileUrl } from "./utils/fileUpload";
@@ -29,6 +35,14 @@ import { uploadThingService } from "./services/uploadthingService";
 
 // Authentication middleware
 const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
+  // DEVELOPMENT MODE: Bypass authentication for testing purposes
+  const bypassAuth = process.env.NODE_ENV !== 'production';
+  
+  if (bypassAuth) {
+    console.log('⚠️ [DEV MODE] Bypassing authentication check for development');
+    return next();
+  }
+  
   if (req.isAuthenticated()) {
     return next();
   }
@@ -56,6 +70,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication is already set up in server/index.ts
   // API routes prefix
   const apiRouter = "/api";
+  
+  // Blog categories
+  app.get(`${apiRouter}/blog/categories`, async (_req: Request, res: Response) => {
+    try {
+      const categories = await storage.getBlogCategories();
+      res.json(categories);
+    } catch (error) {
+      console.error("Error fetching blog categories:", error);
+      res.status(500).json({ message: "Failed to fetch blog categories" });
+    }
+  });
+  
+  app.post(`${apiRouter}/blog/categories`, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const categoryData = insertBlogCategorySchema.parse(req.body);
+      const category = await storage.createBlogCategory(categoryData);
+      res.status(201).json(category);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid category data", errors: error.errors });
+      }
+      console.error("Error creating blog category:", error);
+      res.status(500).json({ message: "Failed to create blog category" });
+    }
+  });
+  
+  // Blog tags
+  app.get(`${apiRouter}/blog/tags`, async (_req: Request, res: Response) => {
+    try {
+      const tags = await storage.getBlogTags();
+      res.json(tags);
+    } catch (error) {
+      console.error("Error fetching blog tags:", error);
+      res.status(500).json({ message: "Failed to fetch blog tags" });
+    }
+  });
+  
+  app.post(`${apiRouter}/blog/tags`, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const tagData = insertBlogTagSchema.parse(req.body);
+      const tag = await storage.createBlogTag(tagData);
+      res.status(201).json(tag);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid tag data", errors: error.errors });
+      }
+      console.error("Error creating blog tag:", error);
+      res.status(500).json({ message: "Failed to create blog tag" });
+    }
+  });
   
   // Projects Routes
   app.get(`${apiRouter}/projects`, async (req: Request, res: Response) => {
@@ -164,56 +228,146 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Process gallery images if provided
       if (galleryImages && Array.isArray(galleryImages)) {
-        // First, delete old gallery images that are no longer included
-        const existingGallery = await storage.getProjectGallery(id);
-        const existingIds = existingGallery.map(img => img.id);
-        const updatedIds = galleryImages
-          .filter(img => img.id && img.id.toString().startsWith('existing-'))
-          .map(img => parseInt(img.id.toString().replace('existing-', '')));
+        console.log(`[PROJECT UPDATE] Processing ${galleryImages.length} gallery images for project ${id}`);
         
-        // Delete removed images
-        const idsToDelete = existingIds.filter(existingId => !updatedIds.includes(existingId));
+        // Get existing gallery for comparison
+        const existingGallery = await storage.getProjectGallery(id);
+        console.log(`[PROJECT UPDATE] Existing gallery has ${existingGallery.length} images`);
+        
+        // Create a map of existing gallery images by URL for efficient lookups
+        const existingImagesByUrl = new Map();
+        existingGallery.forEach(img => {
+          if (img.imageUrl) {
+            existingImagesByUrl.set(img.imageUrl, img);
+          }
+        });
+        
+        // Filter out existing images based on ID ('existing-' prefix) and really new images by URL
+        const updatedExistingImages = [];
+        const trulyNewImages = [];
+        
+        // First pass - categorize images as existing or truly new
+        for (let i = 0; i < galleryImages.length; i++) {
+          const image = galleryImages[i];
+          const displayOrder = i + 1; // Maintain ordering by position in array
+          
+          if (image.id && image.id.toString().startsWith('existing-')) {
+            // This is an existing image with an existing-ID format
+            const imageId = parseInt(image.id.toString().replace('existing-', ''));
+            updatedExistingImages.push({
+              id: imageId,
+              caption: image.caption || '',
+              displayOrder,
+              isFeature: image.isFeature === true
+            });
+          } else if (image.imageUrl) {
+            // Check if this image URL is already in the existing gallery
+            const existingImage = existingImagesByUrl.get(image.imageUrl);
+            
+            if (existingImage) {
+              // This is an existing image by URL, not ID
+              console.log(`[PROJECT UPDATE] Found existing image by URL: ${image.imageUrl.substring(0, 30)}...`);
+              updatedExistingImages.push({
+                id: existingImage.id,
+                caption: image.caption || '',
+                displayOrder,
+                isFeature: image.isFeature === true
+              });
+            } else {
+              // This is truly a new image that needs to be created
+              console.log(`[PROJECT UPDATE] Identified new image: ${image.imageUrl.substring(0, 30)}...`);
+              trulyNewImages.push({
+                imageUrl: image.imageUrl,
+                caption: image.caption || '',
+                displayOrder,
+                isFeature: image.isFeature === true
+              });
+            }
+          }
+        }
+        
+        console.log(`[PROJECT UPDATE] Found ${updatedExistingImages.length} existing images to update and ${trulyNewImages.length} new images to add`);
+        
+        // Create a set of existing image IDs to keep
+        const existingIdsToKeep = new Set(updatedExistingImages.map(img => img.id));
+        
+        // Find IDs to delete (images that are no longer included)
+        const idsToDelete = existingGallery
+          .filter(img => !existingIdsToKeep.has(img.id))
+          .map(img => img.id);
+        
+        console.log(`[PROJECT UPDATE] Found ${idsToDelete.length} images to delete`);
+        
+        // Step 1: Delete removed images
         for (const idToDelete of idsToDelete) {
+          console.log(`[PROJECT UPDATE] Deleting image ${idToDelete}`);
           await storage.deleteProjectGalleryImage(idToDelete);
         }
         
-        // Update or add gallery images
-        for (let i = 0; i < galleryImages.length; i++) {
-          const image = galleryImages[i];
+        // Step 2: Update existing images
+        let hasFeatureImage = false;
+        
+        for (const image of updatedExistingImages) {
+          const existingImage = existingGallery.find(img => img.id === image.id);
           
-          // Check if this is an existing image that needs to be updated
-          if (image.id && image.id.toString().startsWith('existing-')) {
-            const imageId = parseInt(image.id.toString().replace('existing-', ''));
+          if (existingImage) {
+            // Check if any properties have actually changed
+            const captionChanged = existingImage.caption !== image.caption;
+            const orderChanged = existingImage.displayOrder !== image.displayOrder;
+            const featureChanged = existingImage.isFeature !== image.isFeature;
             
-            // Update the existing image
-            await storage.updateProjectGalleryImage(imageId, {
-              caption: image.caption || '',
-              displayOrder: i + 1,
-              isFeature: image.isFeature === true
-            });
+            // Only update if something has changed
+            if (captionChanged || orderChanged || featureChanged) {
+              console.log(`[PROJECT UPDATE] Updating image ${image.id} - changes: caption=${captionChanged}, order=${orderChanged}, feature=${featureChanged}`);
+              
+              await storage.updateProjectGalleryImage(image.id, {
+                caption: image.caption,
+                displayOrder: image.displayOrder,
+                isFeature: image.isFeature
+              });
+            } else {
+              console.log(`[PROJECT UPDATE] No changes for image ${image.id}, skipping update`);
+            }
             
             // Set as feature image if marked
-            if (image.isFeature === true) {
-              await storage.setProjectFeatureImage(id, imageId);
+            if (image.isFeature) {
+              hasFeatureImage = true;
+              
+              if (!existingImage.isFeature) {
+                console.log(`[PROJECT UPDATE] Setting image ${image.id} as feature image`);
+                await storage.setProjectFeatureImage(id, image.id);
+              }
             }
-          } else if (image.imageUrl) {
-            // Add new image
-            await storage.addProjectGalleryImage({
-              projectId: id,
-              imageUrl: image.imageUrl,
-              caption: image.caption || '',
-              displayOrder: i + 1,
-              isFeature: image.isFeature === true
-            });
+          }
+        }
+        
+        // Step 3: Add new images
+        for (const newImage of trulyNewImages) {
+          console.log(`[PROJECT UPDATE] Adding new image: ${newImage.imageUrl.substring(0, 50)}...`);
+          
+          const addedImage = await storage.addProjectGalleryImage({
+            projectId: id,
+            imageUrl: newImage.imageUrl,
+            caption: newImage.caption,
+            displayOrder: newImage.displayOrder,
+            isFeature: newImage.isFeature
+          });
+          
+          if (newImage.isFeature) {
+            hasFeatureImage = true;
+            console.log(`[PROJECT UPDATE] Setting new image ${addedImage.id} as feature image`);
+            await storage.setProjectFeatureImage(id, addedImage.id);
           }
         }
         
         // Make sure at least one image is marked as feature
-        const updatedGallery = await storage.getProjectGallery(id);
-        const hasFeatureImage = updatedGallery.some(img => img.isFeature);
-        
-        if (!hasFeatureImage && updatedGallery.length > 0) {
-          await storage.setProjectFeatureImage(id, updatedGallery[0].id);
+        if (!hasFeatureImage && (updatedExistingImages.length > 0 || trulyNewImages.length > 0)) {
+          const updatedGallery = await storage.getProjectGallery(id);
+          
+          if (updatedGallery.length > 0) {
+            console.log(`[PROJECT UPDATE] No feature image set, using first image as feature`);
+            await storage.setProjectFeatureImage(id, updatedGallery[0].id);
+          }
         }
       }
       
@@ -221,7 +375,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updatedProject = await storage.getProject(id);
       res.json(updatedProject);
     } catch (error) {
-      console.error('Error updating project:', error);
+      console.error('[PROJECT UPDATE ERROR] Error updating project:', error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid project data", errors: error.errors });
       }
@@ -288,8 +442,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         projectId
       });
       
-      const image = await storage.addProjectGalleryImage(galleryData);
-      res.status(201).json(image);
+      console.log(`[DEBUG] Adding gallery image to project ${projectId}:`, {
+        imageUrl: galleryData.imageUrl ? `${galleryData.imageUrl.substring(0, 30)}...` : 'null',
+        caption: galleryData.caption,
+        displayOrder: galleryData.displayOrder
+      });
+      
+      try {
+        const image = await storage.addProjectGalleryImage(galleryData);
+        console.log(`[DEBUG] Successfully added gallery image:`, image);
+        res.status(201).json(image);
+      } catch (error) {
+        console.error(`[ERROR] Failed to add gallery image:`, error);
+        throw error;
+      }
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid gallery image data", errors: error.errors });
@@ -368,20 +534,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Blog Posts Routes
+  // Public blog route for all published blogs
   app.get(`${apiRouter}/blog`, async (req: Request, res: Response) => {
     try {
-      const blogPosts = await storage.getPublishedBlogPosts();
-      res.json(blogPosts);
+      console.log("[DEBUG] Fetching published blog posts");
+      try {
+        // Query raw blog posts data directly from the database
+        const posts = await db.execute(
+          'SELECT * FROM blog_posts ORDER BY created_at DESC'
+        );
+        
+        console.log(`[DEBUG] Found total ${posts.length} blog posts`);
+        
+        // Filter for published posts - handle string 't' or boolean true
+        // In PostgreSQL, boolean true can be stored as 't' (string) or true (boolean)
+        const publishedPosts = posts.filter(post => {
+          const isPublished = String(post.published).toLowerCase() === 't' || 
+                             String(post.published).toLowerCase() === 'true' || 
+                             post.published === true;
+          return isPublished;
+        });
+        console.log(`[DEBUG] Found ${publishedPosts.length} published blog posts`);
+        
+        if (posts.length > 0) {
+          console.log("[DEBUG] Sample post data:", posts[0]);
+          console.log("[DEBUG] Sample post 'published' value:", posts[0].published, "Type:", typeof posts[0].published);
+        }
+        
+        res.json(publishedPosts);
+      } catch (dbError) {
+        console.error("[ERROR] Database error fetching published blog posts:", dbError);
+        // Check if this is a database error with details
+        if (dbError instanceof Error) {
+          console.error("[ERROR] Error details:", dbError.message);
+          console.error("[ERROR] Error stack:", dbError.stack);
+        }
+        throw dbError;
+      }
     } catch (error) {
+      console.error("[ERROR] Failed to fetch published blog posts:", error);
       res.status(500).json({ message: "Failed to fetch blog posts" });
     }
   });
-  
+
   app.get(`${apiRouter}/blog/all`, isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const blogPosts = await storage.getBlogPosts();
-      res.json(blogPosts);
+      console.log("[DEBUG] Fetching all blog posts for admin");
+      
+      // Use direct DB query for consistency with the main blog endpoint
+      const allPosts = await db.execute(
+        'SELECT * FROM blog_posts ORDER BY created_at DESC'
+      );
+      
+      console.log(`[DEBUG] Found ${allPosts.length} total blog posts`);
+      
+      // Transform the posts to ensure consistent property naming
+      const transformedPosts = allPosts.map(post => {
+        // Convert snake_case properties to camelCase
+        return {
+          ...post,
+          // Add createdAt property for frontend compatibility
+          createdAt: post.created_at
+        };
+      });
+      
+      if (transformedPosts.length > 0) {
+        console.log("[DEBUG] Sample admin post:", transformedPosts[0]);
+      }
+      
+      res.json(transformedPosts);
     } catch (error) {
+      console.error("[ERROR] Failed to fetch all blog posts:", error);
       res.status(500).json({ message: "Failed to fetch blog posts" });
     }
   });
@@ -429,6 +652,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid tag data", errors: error.errors });
       }
       res.status(500).json({ message: "Failed to create tag" });
+    }
+  });
+  
+  // Get all categories for all blog posts in a single request (used for filtering)
+  // NOTE: This route must come before dynamic parameter routes!
+  app.get(`${apiRouter}/blog/all-categories`, async (_req: Request, res: Response) => {
+    try {
+      // Get all published blog posts
+      const posts = await storage.getPublishedBlogPosts();
+      
+      // Create a mapping of post IDs to their categories
+      const categoriesMap: Record<number, any[]> = {};
+      
+      // Fetch categories for each post in parallel
+      await Promise.all(
+        posts.map(async (post) => {
+          try {
+            const categories = await storage.getBlogPostCategories(post.id);
+            categoriesMap[post.id] = categories;
+          } catch (error) {
+            console.error(`Error fetching categories for post ${post.id}:`, error);
+            categoriesMap[post.id] = [];
+          }
+        })
+      );
+      
+      res.json(categoriesMap);
+    } catch (error) {
+      console.error("Error fetching all blog post categories:", error);
+      res.status(500).json({ message: "Failed to fetch all blog post categories" });
     }
   });
   
@@ -490,28 +743,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post(`${apiRouter}/blog/:postId/gallery`, isAdmin, async (req: Request, res: Response) => {
     try {
+      console.log(`[BLOG GALLERY] Received add gallery image request for blog post:`, req.params.postId);
+      console.log(`[BLOG GALLERY] Request body:`, req.body);
+      
       const postId = parseInt(req.params.postId);
       if (isNaN(postId)) {
+        console.log(`[BLOG GALLERY ERROR] Invalid post ID: ${req.params.postId}`);
         return res.status(400).json({ message: "Invalid blog post ID" });
       }
       
       // Check if blog post exists
       const post = await storage.getBlogPost(postId);
       if (!post) {
+        console.log(`[BLOG GALLERY ERROR] Blog post not found with ID: ${postId}`);
         return res.status(404).json({ message: "Blog post not found" });
       }
+      
+      console.log(`[BLOG GALLERY] Found blog post:`, post.title);
       
       const galleryData = insertBlogGallerySchema.parse({
         ...req.body,
         postId
       });
       
+      console.log(`[BLOG GALLERY] Validated gallery data:`, galleryData);
+      
       const galleryImage = await storage.addBlogGalleryImage(galleryData);
+      console.log(`[BLOG GALLERY] Successfully added gallery image:`, galleryImage);
+      
       res.status(201).json(galleryImage);
     } catch (error) {
+      console.error(`[BLOG GALLERY ERROR] Failed to add gallery image:`, error);
+      
       if (error instanceof z.ZodError) {
+        console.log(`[BLOG GALLERY ERROR] Validation errors:`, error.errors);
         return res.status(400).json({ message: "Invalid gallery data", errors: error.errors });
       }
+      
       res.status(500).json({ message: "Failed to add gallery image" });
     }
   });
@@ -569,17 +837,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.get(`${apiRouter}/blog/slug/:slug`, async (req: Request, res: Response) => {
     try {
+      console.log(`[DEBUG] Fetching blog post by slug: ${req.params.slug}`);
       const slug = req.params.slug;
       
-      const post = await storage.getBlogPostBySlug(slug);
-      if (!post) {
+      // Use direct DB query for consistency with other blog endpoints
+      const posts = await db.execute(sql`
+        SELECT * FROM blog_posts WHERE slug = ${slug} LIMIT 1
+      `);
+      
+      if (!posts || posts.length === 0) {
+        console.log(`[DEBUG] No blog post found with slug: ${slug}`);
         return res.status(404).json({ message: "Blog post not found" });
       }
       
+      const post = posts[0];
+      console.log(`[DEBUG] Found blog post by slug:`, { id: post.id, title: post.title });
+      
       // Get post categories, tags, and gallery images
-      const categories = await storage.getBlogPostCategories(post.id);
-      const tags = await storage.getBlogPostTags(post.id);
-      const galleryImages = await storage.getBlogGallery(post.id);
+      const categories = await storage.getBlogPostCategories(Number(post.id));
+      const tags = await storage.getBlogPostTags(Number(post.id));
+      const galleryImages = await storage.getBlogGallery(Number(post.id));
+      
+      console.log(`[DEBUG] Post relations: ${categories.length} categories, ${tags.length} tags, ${galleryImages.length} gallery images`);
       
       // Merge post with its categories, tags, and gallery images
       const postWithRelations = {
@@ -591,6 +870,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(postWithRelations);
     } catch (error) {
+      console.error(`[ERROR] Failed to fetch blog post by slug:`, error);
       res.status(500).json({ message: "Failed to fetch blog post" });
     }
   });
@@ -603,15 +883,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid blog post ID" });
       }
       
-      const post = await storage.getBlogPost(id);
-      if (!post) {
+      console.log(`[DEBUG] Fetching blog post by ID: ${id}`);
+      
+      // Use direct DB query for consistency with other blog endpoints
+      const posts = await db.execute(sql`
+        SELECT * FROM blog_posts WHERE id = ${id} LIMIT 1
+      `);
+      
+      if (!posts || posts.length === 0) {
+        console.log(`[DEBUG] No blog post found with ID: ${id}`);
         return res.status(404).json({ message: "Blog post not found" });
       }
+      
+      const post = posts[0];
+      console.log(`[DEBUG] Found blog post by ID:`, { id: post.id, title: post.title });
       
       // Get post categories, tags, and gallery images
       const categories = await storage.getBlogPostCategories(id);
       const tags = await storage.getBlogPostTags(id);
       const galleryImages = await storage.getBlogGallery(id);
+      
+      console.log(`[DEBUG] Post relations: ${categories.length} categories, ${tags.length} tags, ${galleryImages.length} gallery images`);
       
       // Merge post with its categories, tags, and gallery images
       const postWithRelations = {
@@ -623,7 +915,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(postWithRelations);
     } catch (error) {
+      console.error(`[ERROR] Failed to fetch blog post by ID:`, error);
       res.status(500).json({ message: "Failed to fetch blog post" });
+    }
+  });
+  
+  // Get related blog posts based on category
+  app.get(`${apiRouter}/blog/:id/related`, async (req: Request, res: Response) => {
+    try {
+      const postId = parseInt(req.params.id);
+      if (isNaN(postId)) {
+        return res.status(400).json({ message: "Invalid blog post ID" });
+      }
+      
+      // Get the post to find its category
+      const post = await storage.getBlogPost(postId);
+      if (!post) {
+        return res.status(404).json({ message: "Blog post not found" });
+      }
+      
+      // Get all published blog posts
+      const allPosts = await storage.getPublishedBlogPosts();
+      
+      // Find posts with the same category, excluding the current post
+      const relatedPosts = allPosts
+        .filter(p => p.id !== postId && p.category === post.category)
+        .slice(0, 3); // Limit to 3 related posts
+      
+      res.json(relatedPosts);
+    } catch (error) {
+      console.error("Error fetching related blog posts:", error);
+      res.status(500).json({ message: "Failed to fetch related blog posts" });
     }
   });
   
@@ -635,6 +957,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Extract category and tag IDs, and gallery images
       const { categoryIds, tagIds, galleryImages, ...blogPostData } = postData;
+      
+      // Ensure category has a default value
+      if (!blogPostData.category) {
+        blogPostData.category = "";
+      }
       
       // Create the blog post
       const post = await storage.createBlogPost(blogPostData);
@@ -685,6 +1012,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Extract category and tag IDs, and gallery images
       const { categoryIds, tagIds, galleryImages, ...blogPostData } = postData;
       
+      // Ensure category has a default value if it's being updated
+      if (blogPostData.category === null || blogPostData.category === undefined) {
+        blogPostData.category = "";
+      }
+      
       // Update the blog post
       const post = await storage.updateBlogPost(id, blogPostData);
       
@@ -703,20 +1035,108 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Update gallery images if provided
-      if (galleryImages) {
-        // First remove all existing gallery images
-        await storage.deleteAllBlogGalleryImages(id);
+      if (galleryImages && Array.isArray(galleryImages)) {
+        console.log(`[BLOG UPDATE] Processing ${galleryImages.length} gallery images for blog post ${id}`);
         
-        // Then add the new gallery images
-        if (galleryImages.length > 0) {
-          for (let i = 0; i < galleryImages.length; i++) {
-            const galleryImage = {
+        // Get existing gallery for comparison
+        const existingGallery = await storage.getBlogGallery(id);
+        console.log(`[BLOG UPDATE] Existing gallery has ${existingGallery.length} images`);
+        
+        // Map existing images by ID and URL for quick lookup
+        const existingImagesById = new Map();
+        const existingImagesByUrl = new Map();
+        
+        existingGallery.forEach(img => {
+          if (img.id) {
+            existingImagesById.set(img.id, img);
+          }
+          if (img.imageUrl) {
+            existingImagesByUrl.set(img.imageUrl, img);
+          }
+        });
+        
+        // Track which existing images are being kept
+        const keptImageIds = new Set();
+        
+        // First pass: identify which images to keep and which to add
+        const imagesToAdd = [];
+        
+        for (let i = 0; i < galleryImages.length; i++) {
+          const image = galleryImages[i] as any; // Type assertion to avoid TypeScript errors
+          
+          // Check if this is an existing image by ID
+          if (image.id && existingImagesById.has(image.id)) {
+            keptImageIds.add(image.id);
+            continue;
+          }
+          
+          // Check if this is an existing image by URL
+          if (image.imageUrl && existingImagesByUrl.has(image.imageUrl)) {
+            const existingImage = existingImagesByUrl.get(image.imageUrl);
+            keptImageIds.add(existingImage.id);
+            continue;
+          }
+          
+          // This is a new image to add
+          if (image.imageUrl) {
+            imagesToAdd.push({
               postId: id,
-              imageUrl: galleryImages[i].imageUrl,
-              caption: galleryImages[i].caption || null,
-              order: galleryImages[i].order || i // Use provided order or index as default
-            };
-            await storage.addBlogGalleryImage(galleryImage);
+              imageUrl: image.imageUrl,
+              caption: image.caption || null,
+              order: image.order || i // Use provided order or index as default
+            });
+          }
+        }
+        
+        // Identify images to delete (those not being kept)
+        const imagesToDelete = existingGallery
+          .filter(img => !keptImageIds.has(img.id))
+          .map(img => img.id);
+        
+        console.log(`[BLOG UPDATE] Found ${imagesToDelete.length} images to delete and ${imagesToAdd.length} images to add`);
+        
+        // Delete images that are no longer needed
+        for (const idToDelete of imagesToDelete) {
+          await storage.deleteBlogGalleryImage(idToDelete);
+        }
+        
+        // Add new images
+        for (const imageToAdd of imagesToAdd) {
+          await storage.addBlogGalleryImage(imageToAdd);
+        }
+        
+        // Update existing images if needed
+        for (let i = 0; i < galleryImages.length; i++) {
+          const image = galleryImages[i] as any; // Type assertion to avoid TypeScript errors
+          
+          if (image.id && existingImagesById.has(image.id)) {
+            const existingImage = existingImagesById.get(image.id);
+            const caption = image.caption || null;
+            const order = image.order || i;
+            
+            // Only update if something has changed
+            if (existingImage.caption !== caption || existingImage.order !== order) {
+              console.log(`[BLOG UPDATE] Updating image ${image.id} with new caption or order`);
+              
+              await storage.updateBlogGalleryImage(image.id, {
+                caption,
+                order
+              });
+            }
+          } else if (image.imageUrl && existingImagesByUrl.has(image.imageUrl)) {
+            const existingImage = existingImagesByUrl.get(image.imageUrl);
+            const caption = image.caption || null;
+            const order = image.order || i;
+            
+            // Only update if something has changed
+            if (existingImage.caption !== caption || existingImage.order !== order) {
+              console.log(`[BLOG UPDATE] Updating image with URL ${image.imageUrl.substring(0, 30)}... with new caption or order`);
+              
+              await storage.updateBlogGalleryImage(existingImage.id, {
+                caption,
+                order
+              });
+            }
           }
         }
       }
@@ -810,11 +1230,122 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid service ID" });
       }
       
-      const serviceData = insertServiceSchema.partial().parse(req.body);
-      const updatedService = await storage.updateService(id, serviceData);
+      // Extract gallery images from the request body
+      const { galleryImages, ...serviceData } = req.body;
+      
+      // Update the service data
+      const validatedServiceData = insertServiceSchema.partial().parse(serviceData);
+      const updatedService = await storage.updateService(id, validatedServiceData);
       
       if (!updatedService) {
         return res.status(404).json({ message: "Service not found" });
+      }
+      
+      // Process gallery images if provided
+      if (galleryImages && Array.isArray(galleryImages)) {
+        console.log(`[SERVICE] Processing ${galleryImages.length} gallery images for service ${id}`);
+        
+        // Get existing gallery for comparison
+        const existingGallery = await storage.getServiceGallery(id);
+        console.log(`[SERVICE] Existing gallery has ${existingGallery.length} images`);
+        
+        // Map existing images by ID and URL for quick lookup
+        const existingImagesById = new Map();
+        const existingImagesByUrl = new Map();
+        
+        existingGallery.forEach(img => {
+          if (img.id) {
+            existingImagesById.set(img.id, img);
+          }
+          if (img.imageUrl) {
+            existingImagesByUrl.set(img.imageUrl, img);
+          }
+        });
+        
+        // Track which existing images are being kept
+        const keptImageIds = new Set();
+        
+        // First pass: identify which images to keep and which to add
+        const imagesToAdd = [];
+        
+        for (let i = 0; i < galleryImages.length; i++) {
+          const image = galleryImages[i] as any; // Type assertion to avoid TypeScript errors
+          
+          // Check if this is an existing image by ID
+          if (image.id && existingImagesById.has(image.id)) {
+            keptImageIds.add(image.id);
+            continue;
+          }
+          
+          // Check if this is an existing image by URL
+          if (image.imageUrl && existingImagesByUrl.has(image.imageUrl)) {
+            const existingImage = existingImagesByUrl.get(image.imageUrl);
+            keptImageIds.add(existingImage.id);
+            continue;
+          }
+          
+          // This is a new image to add
+          if (image.imageUrl) {
+            imagesToAdd.push({
+              serviceId: id,
+              imageUrl: image.imageUrl,
+              alt: image.alt || '',
+              order: image.order || i + 1 // Use provided order or index as default
+            });
+          }
+        }
+        
+        // Identify images to delete (those not being kept)
+        const imagesToDelete = existingGallery
+          .filter(img => !keptImageIds.has(img.id))
+          .map(img => img.id);
+        
+        console.log(`[SERVICE] Found ${imagesToDelete.length} images to delete and ${imagesToAdd.length} images to add`);
+        
+        // Delete images that are no longer needed
+        for (const idToDelete of imagesToDelete) {
+          await storage.deleteServiceGalleryImage(idToDelete);
+        }
+        
+        // Add new images
+        for (const imageToAdd of imagesToAdd) {
+          await storage.addServiceGalleryImage(imageToAdd);
+        }
+        
+        // Update existing images if needed
+        for (let i = 0; i < galleryImages.length; i++) {
+          const image = galleryImages[i] as any; // Type assertion to avoid TypeScript errors
+          
+          if (image.id && existingImagesById.has(image.id)) {
+            const existingImage = existingImagesById.get(image.id);
+            const alt = image.alt || '';
+            const order = image.order || i + 1;
+            
+            // Only update if something has changed
+            if (existingImage.alt !== alt || existingImage.order !== order) {
+              console.log(`[SERVICE] Updating image ${image.id} with new alt or order`);
+              
+              await storage.updateServiceGalleryImage(image.id, {
+                alt,
+                order
+              });
+            }
+          } else if (image.imageUrl && existingImagesByUrl.has(image.imageUrl)) {
+            const existingImage = existingImagesByUrl.get(image.imageUrl);
+            const alt = image.alt || '';
+            const order = image.order || i + 1;
+            
+            // Only update if something has changed
+            if (existingImage.alt !== alt || existingImage.order !== order) {
+              console.log(`[SERVICE] Updating image with URL ${image.imageUrl.substring(0, 30)}... with new alt or order`);
+              
+              await storage.updateServiceGalleryImage(existingImage.id, {
+                alt,
+                order
+              });
+            }
+          }
+        }
       }
       
       res.json(updatedService);
@@ -822,6 +1353,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid service data", errors: error.errors });
       }
+      console.error("Error updating service:", error);
       res.status(500).json({ message: "Failed to update service" });
     }
   });
@@ -1281,9 +1813,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      console.log(`Cleaning up files for session ${sessionId || '*'}`);
-      if (preserveUrls && Array.isArray(preserveUrls) && preserveUrls.length > 0) {
-        console.log(`With ${preserveUrls.length} files to preserve`);
+      console.log(`[routes] Cleaning up files for session ${sessionId || '*'}`);
+      
+      // Get all project URLs to preserve from the database
+      // This is critical to prevent deletion of images in uploadthing
+      let allProjectUrls: string[] = [];
+      try {
+        // Query all projects to get their main images
+        const allProjects = await storage.getProjects();
+        const projectMainImages = allProjects
+          .map(p => p.image)
+          .filter(Boolean) as string[];
+          
+        console.log(`[routes] Found ${projectMainImages.length} project main images to preserve`);
+        allProjectUrls = [...allProjectUrls, ...projectMainImages];
+        
+        // Also get all gallery images
+        for (const project of allProjects) {
+          if (project.id) {
+            const galleryImages = await storage.getProjectGallery(project.id);
+            const galleryUrls = galleryImages
+              .map(g => g.imageUrl)
+              .filter(Boolean) as string[];
+              
+            console.log(`[routes] Found ${galleryUrls.length} gallery images for project ID ${project.id} to preserve`);
+            allProjectUrls = [...allProjectUrls, ...galleryUrls];
+          }
+        }
+        
+        // Remove duplicates
+        allProjectUrls = Array.from(new Set(allProjectUrls));
+        console.log(`[routes] Total ${allProjectUrls.length} unique project URLs to preserve from database`);
+      } catch (dbError) {
+        console.error(`[routes] Error getting project URLs to preserve:`, dbError);
+      }
+      
+      // Combine user-provided preserveUrls with database URLs
+      const combinedPreserveUrls = [
+        ...(preserveUrls && Array.isArray(preserveUrls) ? preserveUrls : []),
+        ...allProjectUrls
+      ];
+      
+      // Remove duplicates again
+      const finalPreserveUrls = Array.from(new Set(combinedPreserveUrls));
+      
+      console.log(`[routes] Final total of ${finalPreserveUrls.length} unique URLs to preserve during cleanup`);
+      
+      if (finalPreserveUrls.length > 0) {
+        // Log a sample of preserve URLs for debugging (first 5)
+        const previewUrls = finalPreserveUrls.slice(0, 5);
+        console.log(`[routes] Sample URLs to preserve:`, previewUrls);
+        if (finalPreserveUrls.length > 5) {
+          console.log(`[routes] ...and ${finalPreserveUrls.length - 5} more`);
+        }
       }
       
       let deletedFiles: string[] = [];
@@ -1292,18 +1874,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // If fileUrls array is provided, delete each file in the array
       if (fileUrls && Array.isArray(fileUrls) && fileUrls.length > 0) {
-        console.log(`Cleaning up ${fileUrls.length} specific files`);
+        console.log(`[routes] Cleaning up ${fileUrls.length} specific files`);
         
         for (const url of fileUrls) {
           try {
             // Skip if this URL is in the preserve list
-            if (preserveUrls && Array.isArray(preserveUrls) && preserveUrls.includes(url)) {
-              console.log(`Skipping preserved file: ${url}`);
+            if (finalPreserveUrls.includes(url)) {
+              console.log(`[routes] Skipping preserved file: ${url}`);
               preservedFiles.push(url);
               continue;
             }
             
-            const result = await FileManager.cleanupSession(sessionId || '*', url, preserveUrls);
+            const result = await FileManager.cleanupSession(sessionId || '*', url, finalPreserveUrls);
             if (result.deletedUrls.length > 0) {
               deletedFiles = [...deletedFiles, ...result.deletedUrls];
             }
@@ -1322,23 +1904,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } 
       // If a single fileUrl is provided, delete just that file
       else if (fileUrl) {
-        console.log(`Cleaning up specific file: ${fileUrl}`);
+        console.log(`[routes] Cleaning up specific file: ${fileUrl}`);
         
         // Skip if this URL is in the preserve list
-        if (preserveUrls && Array.isArray(preserveUrls) && preserveUrls.includes(fileUrl)) {
-          console.log(`Skipping preserved file: ${fileUrl}`);
+        if (finalPreserveUrls.includes(fileUrl)) {
+          console.log(`[routes] Skipping preserved file: ${fileUrl}`);
           preservedFiles.push(fileUrl);
         } else {
           // Extract the file key if it's an UploadThing URL for better logging
           const fileKey = extractUploadThingKeyFromUrl(fileUrl);
           if (fileKey) {
-            console.log(`File key to delete: ${fileKey}`);
+            console.log(`[routes] File key to delete: ${fileKey}`);
           }
           
           try {
             // Handle individual file deletion with updated cleanupSession method
             // Use wildcard session ID '*' when deleting a specific file with no session context
-            const result = await FileManager.cleanupSession(sessionId || '*', fileUrl, preserveUrls);
+            const result = await FileManager.cleanupSession(sessionId || '*', fileUrl, finalPreserveUrls);
             
             // Add to our running list of deleted and failed files
             deletedFiles = [...deletedFiles, ...result.deletedUrls];
@@ -1357,9 +1939,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } 
       // Otherwise clean up the entire session
       else if (sessionId) {
-        console.log(`Cleaning up entire session: ${sessionId}`);
+        console.log(`[routes] Cleaning up entire session: ${sessionId}`);
         try {
-          const result = await FileManager.cleanupSession(sessionId, undefined, preserveUrls);
+          const result = await FileManager.cleanupSession(sessionId, undefined, finalPreserveUrls);
           deletedFiles = result.deletedUrls;
           failedFiles = result.failedUrls;
           preservedFiles = result.preservedUrls;
@@ -1368,7 +1950,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      console.log(`Cleanup completed: ${deletedFiles.length} files deleted, ${failedFiles.length} failed, ${preservedFiles.length} preserved`);
+      console.log(`[routes] Cleanup completed: ${deletedFiles.length} files deleted, ${failedFiles.length} failed, ${preservedFiles.length} preserved`);
+      
+      // Extended debug information to help diagnose file deletion issues
+      const debugInfo = {
+        // Session information
+        sessionId,
+        specificFileUrl: fileUrl,
+        originalPreserveUrlsCount: preserveUrls ? preserveUrls.length : 0,
+        finalPreserveUrlsCount: finalPreserveUrls.length,
+        
+        // Statistics
+        deletedCount: deletedFiles.length,
+        failedCount: failedFiles.length,
+        preservedCount: preservedFiles.length,
+        
+        // Sample of first few files in each category (to avoid huge responses)
+        deletedSample: deletedFiles.slice(0, 5),
+        preservedSample: preservedFiles.slice(0, 5),
+        failedSample: failedFiles.slice(0, 5),
+        
+        // Full lists for smaller responses, samples for larger ones
+        deletedFiles: deletedFiles.length <= 20 ? deletedFiles : `${deletedFiles.length} files (first 5 shown in deletedSample)`,
+        preservedFiles: preservedFiles.length <= 20 ? preservedFiles : `${preservedFiles.length} files (first 5 shown in preservedSample)`,
+        failedFiles: failedFiles.length <= 20 ? failedFiles : `${failedFiles.length} files (first 5 shown in failedSample)`,
+      };
       
       return res.status(200).json({ 
         success: true,
@@ -1377,12 +1983,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
              preservedFiles.includes(fileUrl) ? `Preserved file: ${fileUrl}` : 
              `Failed to delete file: ${fileUrl}`)
           : `Cleaned up ${deletedFiles.length} files (${preservedFiles.length} preserved)`,
-        deletedFiles, // Return the actual array of deleted files
+        // Core file lists
+        deletedFiles, 
         deletedCount: deletedFiles.length,
         failedFiles,
         failedCount: failedFiles.length,
         preservedFiles,
-        preservedCount: preservedFiles.length
+        preservedCount: preservedFiles.length,
+        // Add extended debugging information
+        debug: debugInfo
       });
     } catch (error) {
       console.error("File cleanup error:", error);
@@ -1486,6 +2095,144 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+  
+  // Get file categorization data from database to help organize files by projects
+  app.get(`${apiRouter}/uploadthing/file-categories`, isAdmin, async (req: Request, res: Response) => {
+    try {
+      // Get all projects with their titles for mapping
+      const projects = await storage.getProjects();
+      
+      // Get all project gallery images with their URLs and project IDs
+      const projectGalleryMap: Record<string, any> = {};
+      
+      for (const project of projects) {
+        const galleryImages = await storage.getProjectGallery(project.id);
+        
+        // For each gallery image, map its URL to the project
+        for (const image of galleryImages) {
+          // Extract key from URL
+          // URLs are typically in format: https://utfs.io/f/PFuaKVnX18hb...
+          // or https://8amedrxbjr.ufs.sh/f/PFuaKVnX18hb...
+          const urlParts = image.imageUrl.split('/');
+          const key = urlParts[urlParts.length - 1];
+          
+          if (key) {
+            projectGalleryMap[key] = {
+              projectId: project.id,
+              projectTitle: project.title,
+              projectCategory: project.category,
+              imageId: image.id,
+              isFeature: image.isFeature
+            };
+          }
+        }
+      }
+      
+      // Get service gallery information as well
+      const services = await storage.getServices();
+      const serviceGalleryMap: Record<string, any> = {};
+      
+      for (const service of services) {
+        const galleryImages = await storage.getServiceGallery(service.id);
+        
+        for (const image of galleryImages) {
+          const urlParts = image.imageUrl.split('/');
+          const key = urlParts[urlParts.length - 1];
+          
+          if (key) {
+            serviceGalleryMap[key] = {
+              serviceId: service.id,
+              serviceTitle: service.title,
+              imageId: image.id
+            };
+          }
+        }
+      }
+      
+      // Get quote request attachments for organization
+      const quoteRequests = await storage.getQuoteRequests();
+      const quoteAttachmentsMap: Record<string, any> = {};
+      
+      // Create a map of quote requests for easy lookup by ID
+      const quoteRequestsById: Record<number, any> = {};
+      quoteRequests.forEach(quote => {
+        quoteRequestsById[quote.id] = quote;
+      });
+      
+      // Process all quote request attachments
+      for (const quote of quoteRequests) {
+        const attachments = await storage.getQuoteRequestAttachments(quote.id);
+        
+        for (const attachment of attachments) {
+          const urlParts = attachment.fileUrl.split('/');
+          const key = urlParts[urlParts.length - 1];
+          
+          if (key) {
+            quoteAttachmentsMap[key] = {
+              quoteId: quote.id,
+              quoteName: quote.name,
+              quoteEmail: quote.email,
+              quoteProject: quote.projectType,
+              attachmentId: attachment.id,
+              fileName: attachment.fileName
+            };
+          }
+        }
+      }
+      
+      // Get team member photos for organization
+      const teamMembers = await storage.getTeamMembers();
+      const teamMemberPhotosMap: Record<string, any> = {};
+      
+      // Process all team member photos
+      for (const member of teamMembers) {
+        if (member.photo) {
+          const urlParts = member.photo.split('/');
+          const key = urlParts[urlParts.length - 1];
+          
+          if (key) {
+            teamMemberPhotosMap[key] = {
+              memberId: member.id,
+              memberName: member.name,
+              memberDesignation: member.designation,
+              active: member.active
+            };
+          }
+        }
+      }
+      
+      // Format and send the categorization data
+      res.json({
+        projects: projects.map(project => ({
+          id: project.id,
+          title: project.title,
+          category: project.category
+        })),
+        projectGalleryMap,
+        serviceGalleryMap,
+        quoteAttachmentsMap,
+        teamMemberPhotosMap,
+        quoteRequests: quoteRequests.map(quote => ({
+          id: quote.id,
+          name: quote.name,
+          email: quote.email,
+          project: quote.projectType
+        })),
+        teamMembers: teamMembers.map(member => ({
+          id: member.id,
+          name: member.name,
+          designation: member.designation,
+          active: member.active
+        }))
+      });
+    } catch (error) {
+      console.error('Error getting file categorization data:', error);
+      res.status(500).json({ 
+        message: "Failed to get file categorization data",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
 
   // Serve static files from public directory
   app.use('/uploads', (req, res, next) => {
@@ -1516,10 +2263,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         // If previously unsubscribed, resubscribe them
-        const updatedSubscriber = await storage.updateNewsletterSubscriber(
-          existingSubscriber.id, 
-          { subscribed: true }
-        );
+        const updatedSubscriber = await storage.updateNewsletterSubscriberStatus(existingSubscriber.id, true);
         
         return res.json({ 
           message: "Welcome back! You have been resubscribed to our newsletter",
@@ -1560,10 +2304,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Update the subscriber to unsubscribed
-      const updatedSubscriber = await storage.updateNewsletterSubscriber(
-        subscriber.id, 
-        { subscribed: false }
-      );
+      const updatedSubscriber = await storage.updateNewsletterSubscriberStatus(subscriber.id, false);
       
       res.json({ 
         message: "You have been unsubscribed from our newsletter",
@@ -1606,24 +2347,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Quote Request Routes
   app.post(`${apiRouter}/quote/request`, async (req: Request, res: Response) => {
     try {
-      // Validate the input data
-      const quoteData = insertQuoteRequestSchema.parse(req.body);
+      console.log("[QUOTE REQUEST] Received quote request submission");
       
-      // Create the quote request
-      const quote = await storage.createQuoteRequest(quoteData);
+      // Log sanitized request data (exclude sensitive information)
+      const sanitizedBody = { 
+        ...req.body,
+        email: req.body.email ? "***@***.***" : undefined, 
+        phone: req.body.phone ? "***-***-****" : undefined,
+        attachments: req.body.attachments ? 
+          `${req.body.attachments.length} attachments` : 
+          "no attachments"
+      };
+      console.log("[QUOTE REQUEST] Request data:", JSON.stringify(sanitizedBody));
       
-      res.status(201).json({ 
-        message: "Your quote request has been submitted successfully!",
-        quote 
-      });
+      try {
+        console.log("[QUOTE REQUEST] Validating input data with extended schema");
+        
+        // First validate with the extended schema that includes attachments
+        const { attachments, ...quoteData } = quoteRequestWithAttachmentsSchema.parse(req.body);
+        
+        console.log("[QUOTE REQUEST] Data validation passed");
+        
+        // Create the quote request
+        const quote = await storage.createQuoteRequest(quoteData);
+        console.log(`[QUOTE REQUEST] Created quote request with ID: ${quote.id}`);
+        
+        // Check if there are file attachments to save
+        if (attachments && Array.isArray(attachments) && attachments.length > 0) {
+          console.log(`[QUOTE REQUEST] Processing ${attachments.length} attachments`);
+          
+          // Save each attachment
+          for (const attachment of attachments) {
+            try {
+              console.log(`[QUOTE REQUEST] Saving attachment: ${attachment.fileName} (${(attachment.fileSize / 1024).toFixed(2)} KB)`);
+              
+              if (!attachment.fileUrl || !attachment.fileKey) {
+                console.error(`[QUOTE REQUEST] Invalid attachment data for ${attachment.fileName}: missing fileUrl or fileKey`);
+                continue; // Skip this attachment but continue with others
+              }
+              
+              // Validate attachment data with the schema
+              const validatedAttachment = fileAttachmentSchema.parse(attachment);
+              
+              await storage.createQuoteRequestAttachment({
+                quoteRequestId: quote.id,
+                fileName: validatedAttachment.fileName,
+                fileUrl: validatedAttachment.fileUrl,
+                fileKey: validatedAttachment.fileKey,
+                fileSize: validatedAttachment.fileSize,
+                fileType: validatedAttachment.fileType
+              });
+              
+              console.log(`[QUOTE REQUEST] Successfully saved attachment: ${attachment.fileName}`);
+            } catch (attachmentError) {
+              console.error(`[QUOTE REQUEST] Error saving attachment ${attachment.fileName}:`, attachmentError);
+              console.error(`[QUOTE REQUEST] Error details:`, attachmentError instanceof Error ? attachmentError.message : String(attachmentError));
+              // Continue with the next attachment instead of failing the whole request
+            }
+          }
+        } else {
+          console.log("[QUOTE REQUEST] No attachments to process");
+        }
+        
+        console.log("[QUOTE REQUEST] Successfully completed quote request submission");
+        res.status(201).json({ 
+          message: "Your quote request has been submitted successfully!",
+          quote 
+        });
+      } catch (validationError) {
+        if (validationError instanceof z.ZodError) {
+          console.error("[QUOTE REQUEST] Validation error:", validationError.errors);
+          return res.status(400).json({ 
+            message: "Invalid quote request data", 
+            errors: validationError.errors 
+          });
+        }
+        throw validationError; // Re-throw if it's not a validation error
+      }
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ 
-          message: "Invalid quote request data", 
-          errors: error.errors 
+      console.error("[QUOTE REQUEST] Error processing quote request:", error);
+      
+      if (error instanceof Error) {
+        console.error("[QUOTE REQUEST] Error details:", {
+          name: error.name,
+          message: error.message,
+          stack: error.stack?.split('\n').slice(0, 3).join('\n') // First 3 lines of stack trace
         });
       }
-      console.error("Quote request error:", error);
+      
       res.status(500).json({ message: "Failed to process quote request" });
     }
   });
@@ -1650,7 +2461,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Quote request not found" });
       }
       
-      res.json(quote);
+      // Get any attachments for this quote request
+      const attachments = await storage.getQuoteRequestAttachments(id);
+      
+      res.json({
+        ...quote,
+        attachments: attachments
+      });
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch quote request" });
     }
@@ -1713,6 +2530,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid quote request ID" });
       }
       
+      // First delete any attachments for this quote request
+      await storage.deleteAllQuoteRequestAttachments(id);
+      
+      // Then delete the quote request itself
       const success = await storage.deleteQuoteRequest(id);
       if (!success) {
         return res.status(404).json({ message: "Quote request not found" });
@@ -1721,6 +2542,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ message: "Failed to delete quote request" });
+    }
+  });
+  
+  // Route to delete a single quote request attachment
+  app.delete(`${apiRouter}/admin/quote/requests/attachments/:id`, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid attachment ID" });
+      }
+      
+      const success = await storage.deleteQuoteRequestAttachment(id);
+      if (!success) {
+        return res.status(404).json({ message: "Attachment not found" });
+      }
+      
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete attachment" });
     }
   });
 

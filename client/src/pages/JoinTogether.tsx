@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { scrollToTop, initializeRevealEffects } from '@/lib/utils';
 import { ArrowRight, Building2, Truck, Users, Star, Award, TrendingUp, Rocket } from 'lucide-react';
 import { motion } from 'framer-motion';
+import PageHeader from '@/components/PageHeader';
 
 // Animation variants
 const fadeInUp = {
@@ -33,42 +34,25 @@ const JoinTogether = () => {
   useEffect(() => {
     scrollToTop();
     document.title = 'Grow With Us - ARCEM';
-    initializeRevealEffects();
+    initializeRevealEffects(true);
   }, []);
 
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
-      <div 
-        className="relative h-[350px] flex items-center justify-center" 
-        style={{
-          backgroundImage: "url('/uploads/images/ian-schneider-TamMbr4okv4-unsplash.jpg')",
-          backgroundSize: 'cover',
-          backgroundPosition: 'center'
-        }}
+      <PageHeader
+        title="Passion Led Us Here"
+        subtitle="Join a team driven by passion and purpose. We're building more than structures - we're building a future together."
+        backgroundImage="/uploads/images/ian-schneider-TamMbr4okv4-unsplash.jpg"
       >
-        <div className="absolute inset-0 bg-black opacity-60"></div>
-        <motion.div 
-          className="relative z-10 text-center px-4 py-20 max-w-5xl mx-auto"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-        >
-          <h1 className="text-white text-5xl md:text-6xl font-montserrat font-bold mb-6">
-            Passion Led Us Here
-          </h1>
-          <p className="text-white text-xl md:text-2xl font-light mx-auto mb-10 max-w-3xl">
-            Join a team driven by passion and purpose. We're building more than structures - we're building a future together.
-          </p>
-          <div className="flex flex-wrap justify-center gap-4">
-            <Link href="#opportunities" onClick={() => document.getElementById('opportunities')?.scrollIntoView({ behavior: 'smooth' })}>
-              <Button size="lg" className="bg-[#1E90DB] hover:bg-[#1670B0] text-lg">
-                Explore Opportunities <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </Link>
-          </div>
-        </motion.div>
-      </div>
+        <div className="flex flex-wrap justify-center gap-4">
+          <Link href="#opportunities" onClick={() => document.getElementById('opportunities')?.scrollIntoView({ behavior: 'smooth' })}>
+            <Button size="lg" className="bg-[#1E90DB] hover:bg-[#1670B0] text-lg">
+              Explore Opportunities <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+          </Link>
+        </div>
+      </PageHeader>
 
       {/* Vision Statement */}
       <div className="bg-white py-20">

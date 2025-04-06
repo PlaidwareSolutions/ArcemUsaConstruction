@@ -76,9 +76,7 @@ const Navbar = ({ isScrolled }: NavbarProps) => {
         "fixed w-full z-50 py-4 transition-all duration-300",
         isAdminPage
           ? "navbar-admin"
-          : isProjectDetailPage || isScrolled
-            ? "navbar-fixed"
-            : "",
+          : "navbar-fixed",
       )}
     >
       <div className="container mx-auto px-4 md:px-8">

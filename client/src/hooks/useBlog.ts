@@ -138,23 +138,42 @@ export const useBlog = (postId?: number) => {
 
   const saveBlogPost = async (data: ExtendedInsertBlogPost) => {
     setIsSubmitting(true);
-    if (postId) {
-      await updateMutation.mutateAsync({ id: postId, data });
-    } else {
-      await createMutation.mutateAsync(data);
+    try {
+      if (postId) {
+        const updated = await updateMutation.mutateAsync({ id: postId, data });
+        return { ...updated, id: postId };
+      } else {
+        return await createMutation.mutateAsync(data);
+      }
+    } catch (error) {
+      console.error("Error in saveBlogPost:", error);
+      throw error;
     }
   };
   
   // Add gallery image mutation
   const addGalleryImageMutation = useMutation({
     mutationFn: async ({ postId, data }: { postId: number, data: { imageUrl: string, caption: string | null, order: number } }) => {
-      return apiRequest({
-        url: `/api/blog/${postId}/gallery`,
-        method: 'POST',
-        body: data
-      });
+      console.log(`[DEBUG] Adding gallery image for post ID ${postId} with URL: ${data.imageUrl}`);
+      
+      // More detailed logging of the API request
+      console.log(`[DEBUG] Full gallery image data being sent:`, JSON.stringify(data, null, 2));
+      
+      try {
+        const result = await apiRequest({
+          url: `/api/blog/${postId}/gallery`,
+          method: 'POST',
+          body: data
+        });
+        console.log(`[DEBUG] API request for gallery image successful:`, result);
+        return result;
+      } catch (error) {
+        console.error(`[DEBUG] API request for gallery image failed:`, error);
+        throw error;
+      }
     },
-    onSuccess: () => {
+    onSuccess: (response) => {
+      console.log(`[DEBUG] Successfully added gallery image:`, response);
       setIsAddingGalleryImage(false);
       queryClient.invalidateQueries({ queryKey: [`/api/blog/${postId}/gallery`] });
       

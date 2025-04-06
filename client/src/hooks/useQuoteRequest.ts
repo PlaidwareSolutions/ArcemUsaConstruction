@@ -3,14 +3,25 @@ import { InsertQuoteRequest } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
+interface FileAttachment {
+  fileName: string;
+  fileUrl: string;
+  fileKey: string;
+  fileSize: number;
+  fileType: string;
+}
+
+interface QuoteRequestWithAttachments extends InsertQuoteRequest {
+  attachments?: FileAttachment[];
+}
+
 export const useQuoteRequest = () => {
   const { toast } = useToast();
 
   // Mutation for submitting a quote request
   const quoteRequestMutation = useMutation({
-    mutationFn: async (data: InsertQuoteRequest) => {
-      const res = await apiRequest("POST", "/api/quote/request", data);
-      return await res.json();
+    mutationFn: async (data: QuoteRequestWithAttachments) => {
+      return await apiRequest("POST", "/api/quote/request", data);
     },
     onSuccess: (data) => {
       toast({
@@ -30,6 +41,6 @@ export const useQuoteRequest = () => {
 
   return {
     quoteRequestMutation,
-    submitQuoteRequest: (data: InsertQuoteRequest) => quoteRequestMutation.mutate(data),
+    submitQuoteRequest: (data: QuoteRequestWithAttachments) => quoteRequestMutation.mutate(data),
   };
 };

@@ -13,7 +13,7 @@ import {
   Users,
   Briefcase,
   UserRound,
-  UploadCloud
+  FolderOpen
 } from 'lucide-react';
 import { useNotifications } from '@/hooks/useNotifications';
 import NotificationIndicator from '@/components/common/NotificationIndicator';
@@ -107,8 +107,8 @@ const AdminNav = ({ activePage }: AdminNavProps) => {
     },
     { 
       href: '/admin/file-upload-test', 
-      label: 'File Upload', 
-      icon: <UploadCloud className="w-5 h-5 mr-3" />,
+      label: 'File Management', 
+      icon: <FolderOpen className="w-5 h-5 mr-3" />,
       active: activePage === 'file-upload-test'
     }
   ];

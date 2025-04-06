@@ -43,8 +43,11 @@ export const useTestimonials = () => {
   // Mutation to submit a new testimonial
   const submitTestimonialMutation = useMutation({
     mutationFn: async (data: PublicTestimonial) => {
-      const response = await apiRequest("POST", "/api/testimonials/submit", data);
-      return response.json();
+      return apiRequest({
+        url: "/api/testimonials/submit",
+        method: "POST",
+        body: data
+      });
     },
     onSuccess: () => {
       toast({
@@ -64,8 +67,10 @@ export const useTestimonials = () => {
   // Mutation to approve a testimonial - admin only
   const approveTestimonialMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await apiRequest("PUT", `/api/admin/testimonials/${id}/approve`);
-      return response.json();
+      return apiRequest({
+        url: `/api/admin/testimonials/${id}/approve`,
+        method: "PUT"
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/testimonials"] });
@@ -88,8 +93,10 @@ export const useTestimonials = () => {
   // Mutation to revoke approval of a testimonial - admin only
   const revokeApprovalMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await apiRequest("PUT", `/api/admin/testimonials/${id}/revoke`);
-      return response.json();
+      return apiRequest({
+        url: `/api/admin/testimonials/${id}/revoke`,
+        method: "PUT"
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/testimonials"] });
@@ -112,10 +119,10 @@ export const useTestimonials = () => {
   // Mutation to delete a testimonial - admin only
   const deleteTestimonialMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await apiRequest("DELETE", `/api/admin/testimonials/${id}`);
-      if (!response.ok) {
-        throw new Error("Failed to delete testimonial");
-      }
+      const response = await apiRequest({
+        url: `/api/admin/testimonials/${id}`,
+        method: "DELETE"
+      });
       return true;
     },
     onSuccess: () => {

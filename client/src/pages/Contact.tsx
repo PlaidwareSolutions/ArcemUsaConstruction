@@ -33,7 +33,7 @@ const Contact = () => {
   useEffect(() => {
     scrollToTop();
     document.title = 'Contact Us - ARCEM';
-    const cleanup = initializeRevealEffects();
+    const cleanup = initializeRevealEffects(true);
     return cleanup;
   }, []);
   
@@ -316,11 +316,19 @@ const Contact = () => {
             </p>
           </div>
           
-          <div className="reveal h-96 bg-gray-300 w-full rounded-lg overflow-hidden shadow-md">
-            {/* In a real implementation, this would be a Google Map */}
-            <div className="w-full h-full flex items-center justify-center bg-gray-200">
-              <p className="text-gray-500">Map would be displayed here</p>
-            </div>
+          <div className="reveal h-96 w-full rounded-lg overflow-hidden shadow-md">
+            <iframe 
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3468.9424330655206!2d-95.64114442422701!3d29.59245997539684!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8640e386c8e11d43%3A0xe5358324de2ee7ce!2s215%20Birch%20Hill%20Dr%2C%20Sugar%20Land%2C%20TX%2077479!5e0!3m2!1sen!2sus!4v1711178243861!5m2!1sen!2sus" 
+              width="100%" 
+              height="100%" 
+              style={{ border: 0 }} 
+              allowFullScreen 
+              loading="lazy" 
+              referrerPolicy="no-referrer-when-downgrade"
+              title="ARCEM Location Map"
+              className="w-full h-full"
+              aria-label="Map showing ARCEM office location at 215 Birch Hill Dr, Sugar Land, TX 77479"
+            ></iframe>
           </div>
         </div>
       </section>

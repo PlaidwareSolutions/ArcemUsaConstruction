@@ -121,7 +121,7 @@ const ProjectDetail = () => {
 
   useEffect(() => {
     scrollToTop();
-    const cleanup = initializeRevealEffects();
+    const cleanup = initializeRevealEffects(true);
     return cleanup;
   }, [projectId]);
 
@@ -218,9 +218,9 @@ const ProjectDetail = () => {
               <ArrowLeft className="mr-2 h-4 w-4" /> Back to Projects
             </Button>
           </Link>
-          <h1 className="text-3xl md:text-4xl font-montserrat font-bold mb-4 reveal">{project.title}</h1>
+          <h1 className="text-3xl md:text-4xl font-montserrat font-bold mb-4 reveal active">{project.title}</h1>
           
-          <div className="flex flex-wrap gap-4 mb-8 reveal">
+          <div className="flex flex-wrap gap-4 mb-8 reveal active">
             <div className="flex items-center text-gray-500">
               <Calendar className="w-4 h-4 mr-2" />
               <span>{project.createdAt ? formatDate(project.createdAt) : "N/A"}</span>
@@ -233,7 +233,7 @@ const ProjectDetail = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 mb-16">
-          <div className="lg:col-span-2 reveal">
+          <div className="lg:col-span-2 reveal active">
             <img 
               src={project.image} 
               alt={project.title} 
@@ -355,7 +355,7 @@ const ProjectDetail = () => {
             </div>
           </div>
 
-          <div className="lg:col-span-1 reveal">
+          <div className="lg:col-span-1 reveal active">
             <div className="bg-gray-100 p-8 mb-8">
               <h3 className="text-xl font-montserrat font-bold mb-6">Project Details</h3>
               <div className="space-y-4">
@@ -513,7 +513,7 @@ const ProjectDetail = () => {
         </Dialog>
 
         {/* Related Projects Section */}
-        <div className="mt-16 reveal">
+        <div className="mt-16 reveal active">
           <h2 className="text-2xl font-montserrat font-bold mb-8">Related Projects</h2>
           
           {/* Use a query to fetch related projects */}

@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useService } from '@/hooks/useService';
 import { ServiceGallery, InsertServiceGallery } from '@shared/schema';
-import { Trash2, Image, Loader2, AlertCircle } from 'lucide-react';
+import { Trash2, Image, Loader2, AlertCircle, ImagePlus } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -118,6 +118,8 @@ const ServiceGalleryManager = forwardRef<ServiceGalleryManagerHandle, ServiceGal
         urls = [urls];
       }
       
+      console.log(`[ServiceGalleryManager handleFileUpload] Starting with ${pendingImages.length} pending images`);
+      
       // If we received a session ID, track it for cleanup
       if (sessionId) {
         setUploadSession(sessionId);
@@ -135,7 +137,17 @@ const ServiceGalleryManager = forwardRef<ServiceGalleryManagerHandle, ServiceGal
         if (allowedToAdd > 0) {
           // Only add the allowed number of images
           const limitedUrls = urls.slice(0, allowedToAdd);
-          setPendingImages(prev => [...prev, ...limitedUrls]);
+          console.log(`[ServiceGalleryManager handleFileUpload] Adding ${limitedUrls.length} of ${urls.length} images (limited by max)`);
+          
+          // Create a new array with all the pending images to ensure state updates properly
+          const newPendingImages = [...pendingImages, ...limitedUrls];
+          setPendingImages(newPendingImages);
+          console.log(`[ServiceGalleryManager handleFileUpload] Updated pendingImages to ${newPendingImages.length} items`);
+          
+          // Force a re-render by scheduling a state update after component processes current updates
+          setTimeout(() => {
+            console.log(`[ServiceGalleryManager handleFileUpload] Forcing re-render check, pendingImages: ${newPendingImages.length}`);
+          }, 100);
           
           toast({
             title: 'Maximum images reached',
@@ -154,7 +166,17 @@ const ServiceGalleryManager = forwardRef<ServiceGalleryManagerHandle, ServiceGal
         }
       } else {
         // We can add all the images
-        setPendingImages(prev => [...prev, ...urls]);
+        console.log(`[ServiceGalleryManager handleFileUpload] Adding all ${urls.length} images`);
+        
+        // Create a new array with all the pending images to ensure state updates properly
+        const newPendingImages = [...pendingImages, ...urls];
+        setPendingImages(newPendingImages);
+        console.log(`[ServiceGalleryManager handleFileUpload] Updated pendingImages to ${newPendingImages.length} items`);
+        
+        // Force a re-render by scheduling a state update after component processes current updates
+        setTimeout(() => {
+          console.log(`[ServiceGalleryManager handleFileUpload] Forcing re-render check, pendingImages: ${newPendingImages.length}`);
+        }, 100);
         
         toast({
           title: 'Images added',
@@ -332,13 +354,54 @@ const ServiceGalleryManager = forwardRef<ServiceGalleryManagerHandle, ServiceGal
         )}
         
         <div className="p-4 border rounded-md bg-muted/20">
-          <h4 className="font-medium mb-3">Service Images ({currentImageCount}/{MAX_GALLERY_IMAGES})</h4>
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="font-medium">Service Images ({currentImageCount}/{MAX_GALLERY_IMAGES})</h4>
+            <div className="flex items-center gap-3">
+              {/* Warning indicator for unsaved changes */}
+              {pendingImages.length > 0 && (
+                <div className="flex items-center text-amber-600 text-sm">
+                  <AlertCircle className="h-4 w-4 mr-1" />
+                  <span>Unsaved gallery changes</span>
+                </div>
+              )}
+              
+              {/* IMPORTANT: Always show "Save Images" button separately from the warning */}
+              {pendingImages.length > 0 && (
+                <Button 
+                  size="sm" 
+                  variant="secondary"
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    try {
+                      console.log("Save Images button clicked. pendingImages:", pendingImages.length);
+                      await saveGalleryImages();
+                    } catch (error) {
+                      console.error("Error saving gallery images:", error);
+                    }
+                  }}
+                  disabled={isUploading}
+                >
+                  {isUploading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <ImagePlus className="h-4 w-4 mr-1" />
+                      Save Images ({pendingImages.length})
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
+          </div>
           
           {canAddMoreImages ? (
             <div className="mb-4">
               <UploadThingFileUpload 
-                endpoint="imageUploader"
-                onClientUploadComplete={(files) => {
+                uploadType="imageUploader"
+                onUploadComplete={(files) => {
                   // Create a session ID for this upload batch
                   const sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
                   trackUploadSession(sessionId);
@@ -346,18 +409,16 @@ const ServiceGalleryManager = forwardRef<ServiceGalleryManagerHandle, ServiceGal
                   
                   // Extract URLs from the response files
                   const urls = files.map(file => {
-                    // Access ufsUrl directly to avoid triggering deprecation warning with file.url
-                    const imageUrl = file.ufsUrl || '';
+                    // Access fileUrl property that comes from our UploadThingFileUpload component
+                    const imageUrl = file.fileUrl || '';
                     return imageUrl;
                   });
                   
                   // Track these files in the database and register them with the session
                   if (serviceId) {
                     files.forEach(file => {
-                      // Use the new URL format exclusively to avoid deprecation warnings
-                      if (file.ufsUrl) {
-                        console.log(`Adding image to service gallery: ${file.ufsUrl} (Session: ${sessionId})`);
-                      }
+                      // Log the file URL being added
+                      console.log(`Adding image to service gallery: ${file.fileUrl} (Session: ${sessionId})`);
                     });
                   }
                   
@@ -375,22 +436,9 @@ const ServiceGalleryManager = forwardRef<ServiceGalleryManagerHandle, ServiceGal
                     });
                   }
                 }}
-                onUploadError={(error) => {
-                  console.error("UploadThing error:", error);
-                  toast({
-                    title: "Upload failed",
-                    description: error.message || "There was an error uploading your images.",
-                    variant: "destructive"
-                  });
-                }}
-                onUploadBegin={() => {
-                  // You can add loading state here if needed
-                }}
-                multiple={true}
-                accept="image/jpeg, image/png, image/webp"
-                maxSizeMB={5}
-                buttonText="Add Images"
-                helpText={`Add up to ${MAX_GALLERY_IMAGES - currentImageCount} more image${MAX_GALLERY_IMAGES - currentImageCount !== 1 ? 's' : ''}`}
+                maxFiles={MAX_GALLERY_IMAGES - currentImageCount}
+                maxFileSize={16} // 16MB max file size
+                allowedFileTypes={['image/jpeg', 'image/png', 'image/webp']}
               />
             </div>
           ) : null}

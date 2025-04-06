@@ -25,7 +25,7 @@ interface UploadThingUploaderProps {
 export default function UploadThingUploader({
   onComplete,
   buttonText = "Upload images",
-  helpText = "Upload project images (JPG, PNG, WebP) up to 8MB each",
+  helpText = "Upload project images (JPG, PNG, WebP) up to 16MB each",
   multiple = true
 }: UploadThingUploaderProps) {
   const { toast } = useToast();
@@ -134,7 +134,7 @@ export default function UploadThingUploader({
               <h3 className="text-lg font-medium">Upload Gallery Images</h3>
               <p className="text-sm text-muted-foreground">{helpText}</p>
               <p className="text-xs text-muted-foreground mt-1">
-                Max file size: 8MB · Up to 10 files
+                Max file size: 16MB · Up to 10 files
               </p>
             </div>
             

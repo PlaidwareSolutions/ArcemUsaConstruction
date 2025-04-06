@@ -81,8 +81,8 @@ export function useFileUpload({
     },
   });
 
-  // Set default max file size (8MB)
-  const maxFileSize = 8 * 1024 * 1024; // 8MB in bytes
+  // Set default max file size (16MB)
+  const maxFileSize = 16 * 1024 * 1024; // 16MB in bytes
 
   // Helper to format file size in human-readable format
   const formatFileSize = (sizeInBytes: number) => {
@@ -192,7 +192,7 @@ export function useFileUpload({
   // Define file size limits and permitted information
   const permittedFileInfo = {
     config: {
-      maxFileSize: "8MB",
+      maxFileSize: "16MB",
       maxFileCount: 10
     }
   };

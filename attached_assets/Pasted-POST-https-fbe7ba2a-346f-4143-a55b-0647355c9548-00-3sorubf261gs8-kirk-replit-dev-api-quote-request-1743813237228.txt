@@ -1,0 +1,66 @@
+POST https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/api/quote/request 500 (Internal Server Error)
+apiRequest @ queryClient.ts:62
+mutationFn @ useQuoteRequest.ts:24
+fn @ @tanstack_react-query.js?v=e92c5523:1189
+run @ @tanstack_react-query.js?v=e92c5523:494
+start @ @tanstack_react-query.js?v=e92c5523:536
+execute @ @tanstack_react-query.js?v=e92c5523:1225
+await in execute (async)
+mutate @ @tanstack_react-query.js?v=e92c5523:2630
+(anonymous) @ @tanstack_react-query.js?v=e92c5523:3295
+submitQuoteRequest @ useQuoteRequest.ts:45
+onSubmit @ QuoteRequestForm.tsx:95
+(anonymous) @ chunk-YABUFNLM.js?v=e92c5523:1675
+await in (anonymous) (async)
+callCallback2 @ chunk-RPCDYKBN.js?v=e92c5523:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=e92c5523:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=e92c5523:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=e92c5523:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=e92c5523:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=e92c5523:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=e92c5523:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=e92c5523:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=e92c5523:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=e92c5523:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=e92c5523:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=e92c5523:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=e92c5523:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=e92c5523:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=e92c5523:5449
+Show 22 more frames
+Show less
+queryClient.ts:82 API request failed: Error: Failed to process quote request
+    at throwIfResNotOk (queryClient.ts:11:11)
+    at async apiRequest (queryClient.ts:73:5)
+    at async Object.mutationFn (useQuoteRequest.ts:24:19)
+apiRequest @ queryClient.ts:82
+await in apiRequest (async)
+mutationFn @ useQuoteRequest.ts:24
+fn @ @tanstack_react-query.js?v=e92c5523:1189
+run @ @tanstack_react-query.js?v=e92c5523:494
+start @ @tanstack_react-query.js?v=e92c5523:536
+execute @ @tanstack_react-query.js?v=e92c5523:1225
+await in execute (async)
+mutate @ @tanstack_react-query.js?v=e92c5523:2630
+(anonymous) @ @tanstack_react-query.js?v=e92c5523:3295
+submitQuoteRequest @ useQuoteRequest.ts:45
+onSubmit @ QuoteRequestForm.tsx:95
+(anonymous) @ chunk-YABUFNLM.js?v=e92c5523:1675
+await in (anonymous) (async)
+callCallback2 @ chunk-RPCDYKBN.js?v=e92c5523:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=e92c5523:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=e92c5523:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=e92c5523:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=e92c5523:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=e92c5523:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=e92c5523:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=e92c5523:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=e92c5523:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=e92c5523:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=e92c5523:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=e92c5523:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=e92c5523:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=e92c5523:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=e92c5523:5449
+Show 22 more frames
+Show less

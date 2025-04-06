@@ -18,14 +18,31 @@ export async function apiRequest<T = any>(
     method?: string;
     body?: any;
     on401?: 'returnNull' | 'throw';
-  } | string
+  } | string,
+  urlOrMethod?: string,
+  data?: any
 ): Promise<T | null> {
-  // Handle string input (backward compatibility)
-  if (typeof options === 'string') {
-    options = { url: options, on401: 'throw' };
-  }
+  let url: string;
+  let method: string = 'GET';
+  let body: any = undefined;
+  let on401: 'returnNull' | 'throw' = 'throw';
 
-  const { url, method = 'GET', body: data, on401 = 'throw' } = options;
+  // Handle multiple calling patterns
+  if (typeof options === 'string' && typeof urlOrMethod === 'string') {
+    // Old pattern: apiRequest("METHOD", "URL", data?)
+    method = options;
+    url = urlOrMethod;
+    body = data;
+  } else if (typeof options === 'string') {
+    // Simple pattern: apiRequest("URL")
+    url = options;
+  } else {
+    // Object pattern: apiRequest({ url, method, body, on401 })
+    url = options.url;
+    method = options.method || 'GET';
+    body = options.body;
+    on401 = options.on401 || 'throw';
+  }
 
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
@@ -37,8 +54,8 @@ export async function apiRequest<T = any>(
     credentials: 'include',
   };
 
-  if (data) {
-    fetchOptions.body = JSON.stringify(data);
+  if (body) {
+    fetchOptions.body = JSON.stringify(body);
   }
 
   try {

@@ -10,16 +10,28 @@ import {
   Plus,
   CheckCircle,
   Clock,
-  Users
+  Users,
+  Wrench,
+  Star,
+  Mail,
+  ClipboardList,
+  BriefcaseBusiness,
+  FolderOpen
 } from 'lucide-react';
 import AdminNav from '@/components/admin/AdminNav';
+import StorageUsage from '@/components/admin/StorageUsage';
 import { Project, BlogPost, Message } from '@shared/schema';
+import { useNotifications } from '@/hooks/useNotifications';
+import NotificationIndicator from '@/components/common/NotificationIndicator';
 
 const Dashboard = () => {
   useEffect(() => {
     scrollToTop();
     document.title = 'Admin Dashboard - ARCEM';
   }, []);
+
+  // Get notification counts
+  const { counts, isLoading: isLoadingNotifications } = useNotifications();
 
   // Fetch projects
   const { data: projects, isLoading: isLoadingProjects } = useQuery<Project[]>({
@@ -35,9 +47,6 @@ const Dashboard = () => {
   const { data: messages, isLoading: isLoadingMessages } = useQuery<Message[]>({
     queryKey: ['/api/messages'],
   });
-
-  // Count unread messages
-  const unreadMessagesCount = messages?.filter(message => !message.read).length || 0;
 
   return (
     <div className="min-h-screen pt-32 pb-20 bg-gray-50">
@@ -95,10 +104,10 @@ const Dashboard = () => {
                 </div>
                 <div>
                   <h3 className="text-lg font-montserrat font-bold">
-                    {isLoadingMessages ? (
+                    {isLoadingNotifications ? (
                       <div className="h-6 w-20 bg-gray-200 animate-pulse rounded"></div>
                     ) : (
-                      <>{unreadMessagesCount} Unread</>
+                      <>{counts.unreadMessages} Unread</>
                     )}
                   </h3>
                   <p className="text-sm text-gray-500">New messages</p>
@@ -106,34 +115,147 @@ const Dashboard = () => {
               </div>
             </div>
             
+            {/* Storage Usage */}
+            <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+              <StorageUsage />
+            </div>
+            
             {/* Quick Actions */}
             <div className="bg-white rounded-lg shadow-md p-6 mb-8">
               <h2 className="text-xl font-montserrat font-bold mb-4">Quick Actions</h2>
-              <div className="flex flex-wrap gap-4">
-                <Link href="/admin/projects">
-                  <Button variant="outline" className="flex items-center">
-                    <Building className="mr-2 h-4 w-4" /> 
-                    Manage Projects
-                  </Button>
-                </Link>
-                <Link href="/admin/projects?action=new">
-                  <Button variant="gold" className="flex items-center">
-                    <Plus className="mr-2 h-4 w-4" /> 
-                    Add New Project
-                  </Button>
-                </Link>
-                <Link href="/admin/blog">
-                  <Button variant="outline" className="flex items-center">
-                    <FileText className="mr-2 h-4 w-4" /> 
-                    Manage Blog
-                  </Button>
-                </Link>
-                <Link href="/admin/blog?action=new">
-                  <Button variant="gold" className="flex items-center">
-                    <Plus className="mr-2 h-4 w-4" /> 
-                    Add New Article
-                  </Button>
-                </Link>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {/* Content Management */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Content</h3>
+                  <div className="space-y-2">
+                    <Link href="/admin/projects">
+                      <Button variant="outline" className="w-full justify-start">
+                        <Building className="mr-2 h-4 w-4" /> 
+                        Projects
+                      </Button>
+                    </Link>
+                    <Link href="/admin/services">
+                      <Button variant="outline" className="w-full justify-start">
+                        <Wrench className="mr-2 h-4 w-4" /> 
+                        Services
+                      </Button>
+                    </Link>
+                    <Link href="/admin/blog">
+                      <Button variant="outline" className="w-full justify-start">
+                        <FileText className="mr-2 h-4 w-4" /> 
+                        Blog
+                      </Button>
+                    </Link>
+                    <Link href="/admin/testimonials">
+                      <Button variant="outline" className="w-full justify-start relative">
+                        <Star className="mr-2 h-4 w-4" /> 
+                        Testimonials
+                        {counts.pendingTestimonials > 0 && (
+                          <NotificationIndicator 
+                            count={counts.pendingTestimonials} 
+                            size="sm" 
+                            className="absolute right-2 top-2"
+                          />
+                        )}
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+                
+                {/* Communication */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Communication</h3>
+                  <div className="space-y-2">
+                    <Link href="/admin/messages">
+                      <Button variant="outline" className="w-full justify-start relative">
+                        <MessageSquare className="mr-2 h-4 w-4" /> 
+                        Messages
+                        {counts.unreadMessages > 0 && (
+                          <NotificationIndicator 
+                            count={counts.unreadMessages} 
+                            size="sm" 
+                            className="absolute right-2 top-2"
+                          />
+                        )}
+                      </Button>
+                    </Link>
+                    <Link href="/admin/newsletter">
+                      <Button variant="outline" className="w-full justify-start">
+                        <Mail className="mr-2 h-4 w-4" /> 
+                        Newsletter
+                      </Button>
+                    </Link>
+                    <Link href="/admin/quotes">
+                      <Button variant="outline" className="w-full justify-start relative">
+                        <ClipboardList className="mr-2 h-4 w-4" /> 
+                        Quote Requests
+                        {counts.pendingQuoteRequests > 0 && (
+                          <NotificationIndicator 
+                            count={counts.pendingQuoteRequests} 
+                            size="sm" 
+                            className="absolute right-2 top-2"
+                          />
+                        )}
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+                
+                {/* Resources */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Resources</h3>
+                  <div className="space-y-2">
+                    <Link href="/admin/careers">
+                      <Button variant="outline" className="w-full justify-start">
+                        <BriefcaseBusiness className="mr-2 h-4 w-4" /> 
+                        Careers
+                      </Button>
+                    </Link>
+                    <Link href="/admin/team-members">
+                      <Button variant="outline" className="w-full justify-start">
+                        <Users className="mr-2 h-4 w-4" /> 
+                        Team Members
+                      </Button>
+                    </Link>
+                    <Link href="/admin/file-upload-test">
+                      <Button variant="outline" className="w-full justify-start">
+                        <FolderOpen className="mr-2 h-4 w-4" /> 
+                        File Manager
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+                
+                {/* Create New */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Create New</h3>
+                  <div className="space-y-2">
+                    <Link href="/admin/projects?action=new">
+                      <Button variant="gold" className="w-full justify-start">
+                        <Plus className="mr-2 h-4 w-4" /> 
+                        Project
+                      </Button>
+                    </Link>
+                    <Link href="/admin/blog?action=new">
+                      <Button variant="gold" className="w-full justify-start">
+                        <Plus className="mr-2 h-4 w-4" /> 
+                        Blog Article
+                      </Button>
+                    </Link>
+                    <Link href="/admin/services?action=new">
+                      <Button variant="gold" className="w-full justify-start">
+                        <Plus className="mr-2 h-4 w-4" /> 
+                        Service
+                      </Button>
+                    </Link>
+                    <Link href="/admin/careers?action=new">
+                      <Button variant="gold" className="w-full justify-start">
+                        <Plus className="mr-2 h-4 w-4" /> 
+                        Job Posting
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
               </div>
             </div>
             

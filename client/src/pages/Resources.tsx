@@ -36,7 +36,7 @@ const Resources = () => {
   useEffect(() => {
     scrollToTop();
     document.title = 'Subcontractor Resources - ARCEM';
-    initializeRevealEffects();
+    initializeRevealEffects(true);
   }, []);
 
   // Document data
