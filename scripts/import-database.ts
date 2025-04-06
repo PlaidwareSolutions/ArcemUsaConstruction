@@ -130,12 +130,10 @@ async function importTable(tableName: string, table: any, useRawImport: boolean 
           } else if (tableName === 'newsletter_subscribers') {
             for (const record of records) {
               await directDb`
-                INSERT INTO newsletter_subscribers (id, email, first_name, last_name, subscribed, created_at)
+                INSERT INTO newsletter_subscribers (id, email, subscribed, created_at)
                 VALUES (
                   ${record.id}, 
                   ${record.email}, 
-                  ${record.first_name}, 
-                  ${record.last_name}, 
                   ${record.subscribed}, 
                   ${record.created_at}
                 )
