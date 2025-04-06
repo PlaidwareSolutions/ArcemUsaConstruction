@@ -82,7 +82,7 @@ async function importTable(tableName: string, table: any, useRawImport: boolean 
     if (records.length > 0) {
       try {
         // Filter out records with invalid foreign keys
-        if (tableName === 'blog_post_categories') {
+        if (tableName === 'blog_post_categories' || tableName === 'blog_post_tags') {
           // Get valid blog post IDs
           const validPostIds = await directDb`SELECT id FROM blog_posts`;
           records = records.filter(record => 
