@@ -35,14 +35,6 @@ import { uploadThingService } from "./services/uploadthingService";
 
 // Authentication middleware
 const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
-  // DEVELOPMENT MODE: Bypass authentication for testing purposes
-  const bypassAuth = process.env.NODE_ENV !== 'production';
-  
-  if (bypassAuth) {
-    console.log('⚠️ [DEV MODE] Bypassing authentication check for development');
-    return next();
-  }
-  
   if (req.isAuthenticated()) {
     return next();
   }
@@ -51,15 +43,6 @@ const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
 
 // Admin role middleware
 const isAdmin = (req: Request, res: Response, next: NextFunction) => {
-  // DEVELOPMENT MODE: Always allow admin access for testing purposes
-  // TODO: Remove this bypass before production deployment
-  const bypassAuth = process.env.NODE_ENV !== 'production';
-  
-  if (bypassAuth) {
-    console.log('⚠️ [DEV MODE] Bypassing admin authentication check for development');
-    return next();
-  }
-  
   if (req.isAuthenticated() && req.user.role === 'admin') {
     return next();
   }

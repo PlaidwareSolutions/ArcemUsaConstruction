@@ -88,16 +88,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async (): Promise<void> => {
     setIsLoading(true);
     try {
-      await apiRequest({
-        url: '/api/logout',
-        method: 'POST'
-      });
+      // First set user to null to immediately update UI
       setUser(null);
       
       // Clear any authenticated queries
       queryClient.clear();
+      
+      // Call the logout API
+      await apiRequest({
+        url: '/api/logout',
+        method: 'POST'
+      });
+      
+      // Add a small delay to ensure the logout API call completes
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Force a complete page reload to reset all application state
+      window.location.href = '/';
+      
+      return; // Early return as page will reload
     } catch (error) {
       console.error('Logout error:', error);
+      // Even if there's an error, set user to null
+      setUser(null);
     } finally {
       setIsLoading(false);
     }

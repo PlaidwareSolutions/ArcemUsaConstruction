@@ -4,6 +4,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import { createUploadthing } from "uploadthing/server";
 import { uploadRouter, createUploadthingExpressHandler } from "./uploadthing";
 import { setupAuth } from "./auth";
+import cookieParser from "cookie-parser";
 
 // Set UploadThing environment variables
 if (!process.env.UPLOADTHING_SECRET || !process.env.UPLOADTHING_APP_ID) {
@@ -18,6 +19,7 @@ if (!process.env.UPLOADTHING_SECRET || !process.env.UPLOADTHING_APP_ID) {
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser()); // Parse cookies for easier access
 
 // First, set up authentication to ensure session is available
 setupAuth(app);

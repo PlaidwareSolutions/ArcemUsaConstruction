@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { Menu, X, User } from "lucide-react";
+import { Menu, X, User, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import NotificationBadge from "@/components/common/NotificationBadge";
 
@@ -10,10 +10,10 @@ type NavbarProps = {
 };
 
 const Navbar = ({ isScrolled }: NavbarProps) => {
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [logoAnimated, setLogoAnimated] = useState(false);
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, logout } = useAuth();
   const logoRef = useRef<HTMLImageElement>(null);
 
   // Check if we're on an admin page
@@ -130,14 +130,33 @@ const Navbar = ({ isScrolled }: NavbarProps) => {
               </div>
             )}
 
-            {/* Login/Admin Button */}
-            <Link
-              href={isAuthenticated ? "/admin" : "/auth/login"}
-              className="bg-[#1E90DB] hover:bg-[#1670B0] text-white px-4 py-2 rounded-sm flex items-center space-x-1 font-montserrat text-sm transition-colors"
-            >
-              <User className="w-4 h-4 mr-1" />
-              {isAuthenticated ? "ADMIN" : "LOGIN"}
-            </Link>
+            {/* Login/Admin/Logout Buttons */}
+            {isAuthenticated ? (
+              <div className="flex items-center space-x-2">
+                <Link
+                  href="/admin"
+                  className="bg-[#1E90DB] hover:bg-[#1670B0] text-white px-4 py-2 rounded-sm flex items-center space-x-1 font-montserrat text-sm transition-colors"
+                >
+                  <User className="w-4 h-4 mr-1" />
+                  ADMIN
+                </Link>
+                <button
+                  onClick={() => logout()} 
+                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-sm flex items-center space-x-1 font-montserrat text-sm transition-colors"
+                >
+                  <LogOut className="w-4 h-4 mr-1" />
+                  LOGOUT
+                </button>
+              </div>
+            ) : (
+              <Link
+                href="/auth/login"
+                className="bg-[#1E90DB] hover:bg-[#1670B0] text-white px-4 py-2 rounded-sm flex items-center space-x-1 font-montserrat text-sm transition-colors"
+              >
+                <User className="w-4 h-4 mr-1" />
+                LOGIN
+              </Link>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -205,14 +224,37 @@ const Navbar = ({ isScrolled }: NavbarProps) => {
             )}
 
             {/* Mobile Login/Admin Button */}
-            <Link
-              href={isAuthenticated ? "/admin" : "/auth/login"}
-              className="bg-[#1E90DB] hover:bg-[#1670B0] text-white px-4 py-2 rounded-sm flex items-center justify-center space-x-1 font-montserrat text-sm transition-colors"
-              onClick={closeMobileMenu}
-            >
-              <User className="w-4 h-4 mr-1" />
-              {isAuthenticated ? "ADMIN" : "LOGIN"}
-            </Link>
+            {isAuthenticated ? (
+              <div className="flex flex-col space-y-2">
+                <Link
+                  href="/admin"
+                  className="bg-[#1E90DB] hover:bg-[#1670B0] text-white px-4 py-2 rounded-sm flex items-center justify-center space-x-1 font-montserrat text-sm transition-colors"
+                  onClick={closeMobileMenu}
+                >
+                  <User className="w-4 h-4 mr-1" />
+                  ADMIN
+                </Link>
+                <button
+                  onClick={() => {
+                    closeMobileMenu();
+                    logout();
+                  }}
+                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-sm flex items-center justify-center space-x-1 font-montserrat text-sm transition-colors"
+                >
+                  <LogOut className="w-4 h-4 mr-1" />
+                  LOGOUT
+                </button>
+              </div>
+            ) : (
+              <Link
+                href="/auth/login"
+                className="bg-[#1E90DB] hover:bg-[#1670B0] text-white px-4 py-2 rounded-sm flex items-center justify-center space-x-1 font-montserrat text-sm transition-colors"
+                onClick={closeMobileMenu}
+              >
+                <User className="w-4 h-4 mr-1" />
+                LOGIN
+              </Link>
+            )}
           </div>
         </div>
       </div>

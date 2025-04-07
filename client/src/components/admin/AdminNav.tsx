@@ -13,10 +13,12 @@ import {
   Users,
   Briefcase,
   UserRound,
-  FolderOpen
+  FolderOpen,
+  LogOut
 } from 'lucide-react';
 import { useNotifications } from '@/hooks/useNotifications';
 import NotificationIndicator from '@/components/common/NotificationIndicator';
+import { useAuth } from '@/contexts/AuthContext';
 
 type AdminNavProps = {
   activePage: 'dashboard' | 'projects' | 'services' | 'blog' | 'messages' | 'testimonials' | 'settings' | 'accessibility' | 'newsletter' | 'quotes' | 'subcontractors' | 'careers' | 'team-members' | 'file-upload-test';
@@ -25,6 +27,7 @@ type AdminNavProps = {
 const AdminNav = ({ activePage }: AdminNavProps) => {
   const [location, navigate] = useLocation();
   const { counts, isLoading } = useNotifications();
+  const { logout } = useAuth();
   
   const navItems = [
     { 
@@ -156,12 +159,21 @@ const AdminNav = ({ activePage }: AdminNavProps) => {
           </ul>
         </nav>
       </div>
-      <div className="mt-4 bg-white rounded-lg shadow-md p-4">
+      <div className="mt-4 bg-white rounded-lg shadow-md p-4 space-y-4">
         <div 
           onClick={() => navigate('/')}
           className="text-sm text-gray-600 hover:text-[#1E90DB] transition-colors cursor-pointer"
         >
           ← Return to Website
+        </div>
+        
+        {/* Logout button */}
+        <div 
+          onClick={() => logout()}
+          className="flex items-center text-sm text-red-600 hover:text-red-800 transition-colors cursor-pointer"
+        >
+          <LogOut className="w-4 h-4 mr-2" />
+          Logout
         </div>
       </div>
     </div>
