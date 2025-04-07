@@ -1,0 +1,144 @@
+wnload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+ElectronCleanupHandler.tsx:16 ElectronCleanupHandler: Initializing in Electron context
+GlobalCleanupHandler.tsx:10 GlobalCleanupHandler: Initializing
+fileUtils.ts:295 Cleaned up 0 old files
+HeroSection.tsx:23 User interaction detected, loading video
+chunk-RPCDYKBN.js?v=2d1ce2b3:521 Warning: Encountered two children with the same key, `3`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+    at div
+    at div
+    at div
+    at div
+    at BlogCard (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/src/components/common/BlogCard.tsx:22:21)
+    at div
+    at div
+    at section
+    at BlogSection (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/src/components/home/BlogSection.tsx:27:49)
+    at Home (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/src/pages/Home.tsx:30:3)
+    at Route (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=2d1ce2b3:323:16)
+    at Switch (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=2d1ce2b3:379:17)
+    at main
+    at div
+    at Router (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/src/App.tsx?v=vfqxKrfDwOQfmUFMVxXLE:87:39)
+    at SeoProvider (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/src/contexts/SeoContext.tsx:40:31)
+    at AuthProvider (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/src/contexts/AuthContext.tsx:31:32)
+    at QueryClientProvider (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=2d1ce2b3:2805:3)
+    at App
+printWarning @ chunk-RPCDYKBN.js?v=2d1ce2b3:521
+Show 1 more frame
+Show less
+chunk-RPCDYKBN.js?v=2d1ce2b3:521 Warning: Encountered two children with the same key, `5`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+    at div
+    at div
+    at div
+    at div
+    at BlogCard (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/src/components/common/BlogCard.tsx:22:21)
+    at div
+    at div
+    at section
+    at BlogSection (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/src/components/home/BlogSection.tsx:27:49)
+    at Home (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/src/pages/Home.tsx:30:3)
+    at Route (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=2d1ce2b3:323:16)
+    at Switch (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=2d1ce2b3:379:17)
+    at main
+    at div
+    at Router (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/src/App.tsx?v=vfqxKrfDwOQfmUFMVxXLE:87:39)
+    at SeoProvider (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/src/contexts/SeoContext.tsx:40:31)
+    at AuthProvider (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/src/contexts/AuthContext.tsx:31:32)
+    at QueryClientProvider (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=2d1ce2b3:2805:3)
+    at App
+printWarning @ chunk-RPCDYKBN.js?v=2d1ce2b3:521
+Show 1 more frame
+Show less
+chunk-RPCDYKBN.js?v=2d1ce2b3:521 Warning: Encountered two children with the same key, `3`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+    at div
+    at div
+    at div
+    at div
+    at BlogCard (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/src/components/common/BlogCard.tsx:22:21)
+    at div
+    at div
+    at section
+    at BlogSection (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/src/components/home/BlogSection.tsx:27:49)
+    at Home (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/src/pages/Home.tsx:30:3)
+    at Route (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=2d1ce2b3:323:16)
+    at Switch (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=2d1ce2b3:379:17)
+    at main
+    at div
+    at Router (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/src/App.tsx?v=vfqxKrfDwOQfmUFMVxXLE:87:39)
+    at SeoProvider (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/src/contexts/SeoContext.tsx:40:31)
+    at AuthProvider (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/src/contexts/AuthContext.tsx:31:32)
+    at QueryClientProvider (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=2d1ce2b3:2805:3)
+    at App
+printWarning @ chunk-RPCDYKBN.js?v=2d1ce2b3:521
+Show 1 more frame
+Show less
+chunk-RPCDYKBN.js?v=2d1ce2b3:521 Warning: Encountered two children with the same key, `5`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+    at div
+    at div
+    at div
+    at div
+    at BlogCard (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/src/components/common/BlogCard.tsx:22:21)
+    at div
+    at div
+    at section
+    at BlogSection (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/src/components/home/BlogSection.tsx:27:49)
+    at Home (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/src/pages/Home.tsx:30:3)
+    at Route (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=2d1ce2b3:323:16)
+    at Switch (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=2d1ce2b3:379:17)
+    at main
+    at div
+    at Router (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/src/App.tsx?v=vfqxKrfDwOQfmUFMVxXLE:87:39)
+    at SeoProvider (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/src/contexts/SeoContext.tsx:40:31)
+    at AuthProvider (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/src/contexts/AuthContext.tsx:31:32)
+    at QueryClientProvider (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=2d1ce2b3:2805:3)
+    at App
+printWarning @ chunk-RPCDYKBN.js?v=2d1ce2b3:521
+Show 1 more frame
+Show less
+chunk-RPCDYKBN.js?v=2d1ce2b3:521 Warning: Encountered two children with the same key, `2`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+    at div
+    at div
+    at div
+    at BlogCard (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/src/components/common/BlogCard.tsx:22:21)
+    at div
+    at div
+    at section
+    at BlogSection (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/src/components/home/BlogSection.tsx:27:49)
+    at Home (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/src/pages/Home.tsx:30:3)
+    at Route (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=2d1ce2b3:323:16)
+    at Switch (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=2d1ce2b3:379:17)
+    at main
+    at div
+    at Router (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/src/App.tsx?v=vfqxKrfDwOQfmUFMVxXLE:87:39)
+    at SeoProvider (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/src/contexts/SeoContext.tsx:40:31)
+    at AuthProvider (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/src/contexts/AuthContext.tsx:31:32)
+    at QueryClientProvider (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=2d1ce2b3:2805:3)
+    at App
+printWarning @ chunk-RPCDYKBN.js?v=2d1ce2b3:521
+Show 1 more frame
+Show less
+chunk-RPCDYKBN.js?v=2d1ce2b3:521 Warning: Encountered two children with the same key, `8`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+    at div
+    at div
+    at div
+    at BlogCard (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/src/components/common/BlogCard.tsx:22:21)
+    at div
+    at div
+    at section
+    at BlogSection (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/src/components/home/BlogSection.tsx:27:49)
+    at Home (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/src/pages/Home.tsx:30:3)
+    at Route (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=2d1ce2b3:323:16)
+    at Switch (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=2d1ce2b3:379:17)
+    at main
+    at div
+    at Router (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/src/App.tsx?v=vfqxKrfDwOQfmUFMVxXLE:87:39)
+    at SeoProvider (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/src/contexts/SeoContext.tsx:40:31)
+    at AuthProvider (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/src/contexts/AuthContext.tsx:31:32)
+    at QueryClientProvider (https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=2d1ce2b3:2805:3)
+    at App
+printWarning @ chunk-RPCDYKBN.js?v=2d1ce2b3:521
+Show 1 more frame
+Show less
+/admin:1 A soft navigation has been detected: https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/admin
+file-upload-test:1 A soft navigation has been detected: https://fbe7ba2a-346f-4143-a55b-0647355c9548-00-3sorubf261gs8.kirk.replit.dev/admin/file-upload-test
+UploadThingFileManager.tsx:187 Blog gallery map from API: Object
