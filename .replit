@@ -1,1 +1,12 @@
-modules = ["postgresql-16"]
+modules = ["nodejs-20", "bash", "web", "postgresql-16"]
+run = "npm run dev"
+
+[deployment]
+run = ["sh", "-c", "npm run dev"]
+
+[nix]
+channel = "stable-24_05"
+
+[[ports]]
+localPort = 5000
+externalPort = 80
