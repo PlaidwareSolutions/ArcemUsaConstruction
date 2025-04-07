@@ -1,4 +1,4 @@
--- Complete database schema generated on 2025-04-06T21:41:47.724Z
+-- Complete database schema generated on 2025-04-06T23:54:13.055Z
 
 -- Tables
 CREATE TABLE public.blog_categories (

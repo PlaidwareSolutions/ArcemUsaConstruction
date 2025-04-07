@@ -37,8 +37,8 @@ const tables = [
 async function clearTable(tableName: string): Promise<void> {
   try {
     console.log(`Clearing table: ${tableName}`);
-    // Delete records without requiring superuser privileges
-    await directDb`DELETE FROM ${directDb(tableName)}`;
+    // Using a raw SQL query with CASCADE to handle foreign key constraints
+    await directDb`TRUNCATE TABLE ${directDb(tableName)} CASCADE`;
     console.log(`✅ Cleared table ${tableName}`);
   } catch (error) {
     console.error(`❌ Error clearing table ${tableName}:`, error);
@@ -58,24 +58,7 @@ async function importTable(tableName: string, table: any, useRawImport: boolean 
     
     // Read the data from the JSON file
     const rawData = fs.readFileSync(filePath, 'utf8');
-    let records = JSON.parse(rawData);
-    
-    // Convert date strings to Date objects and handle special timestamp fields
-    records = records.map(record => {
-      const newRecord = { ...record };
-      for (const key in newRecord) {
-        if (typeof newRecord[key] === 'string' && newRecord[key].match(/^\d{4}-\d{2}-\d{2}/)) {
-          newRecord[key] = new Date(newRecord[key]);
-        }
-      }
-      // Handle job_postings timestamps
-      if (tableName === 'job_postings') {
-        const now = new Date();
-        newRecord.createdAt = newRecord.createdAt || now;
-        newRecord.updatedAt = newRecord.updatedAt || now;
-      }
-      return newRecord;
-    });
+    const records = JSON.parse(rawData);
     
     if (!records.length) {
       console.log(`⚠️ No records found for ${tableName}, skipping.`);
@@ -87,19 +70,6 @@ async function importTable(tableName: string, table: any, useRawImport: boolean 
     // Insert the records into the table
     if (records.length > 0) {
       try {
-        // Filter out records with invalid foreign keys
-        if (tableName === 'blog_post_categories' || tableName === 'blog_post_tags') {
-          // Get valid blog post IDs
-          const validPostIds = await directDb`SELECT id FROM blog_posts`;
-          records = records.filter(record => 
-            validPostIds.some(post => post.id === record.post_id)
-          );
-          if (records.length === 0) {
-            console.log('⚠️ No valid records found after foreign key filtering');
-            return;
-          }
-        }
-
         if (useRawImport) {
           // Use raw SQL for tables with schema mismatches
           console.log(`Using raw SQL import for ${tableName} due to schema mismatch`);
@@ -136,10 +106,12 @@ async function importTable(tableName: string, table: any, useRawImport: boolean 
           } else if (tableName === 'newsletter_subscribers') {
             for (const record of records) {
               await directDb`
-                INSERT INTO newsletter_subscribers (id, email, subscribed, created_at)
+                INSERT INTO newsletter_subscribers (id, email, first_name, last_name, subscribed, created_at)
                 VALUES (
                   ${record.id}, 
                   ${record.email}, 
+                  ${record.first_name}, 
+                  ${record.last_name}, 
                   ${record.subscribed}, 
                   ${record.created_at}
                 )
@@ -283,10 +255,16 @@ async function importAllData(): Promise<void> {
   }
   
   try {
-    // Clear tables in reverse order to handle dependencies
-    for (const tableInfo of [...tables].reverse()) {
+    // Temporarily disable foreign key checks to allow clearing tables with circular dependencies
+    await directDb`SET session_replication_role = replica`;
+    
+    // Clear each table
+    for (const tableInfo of tables) {
       await clearTable(tableInfo.name);
     }
+    
+    // Re-enable foreign key checks
+    await directDb`SET session_replication_role = DEFAULT`;
     
     // Import data into each table
     for (const tableInfo of tables) {

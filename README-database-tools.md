@@ -1,92 +1,124 @@
-# Database Management Tools
+# Database Tools for Arcem Construction Management Platform
 
-This document provides information about the database management tools available in this project.
-
-## Overview
-
-The database tooling suite provides a comprehensive set of utilities to:
-
-1. Export database content to JSON files
-2. Import database content from JSON files
-3. Generate complete SQL schema
-4. Reset sequence values
+This README provides an overview of the database utilities and tools available for managing the Arcem Construction Management Platform database.
 
 ## Available Tools
 
-### Database Export
+### Database Export and Import
 
-Exports all database tables to JSON files in the `database-export` directory.
+- **Export Database**: `npm run db:export` - Exports all data from the current database to JSON files in the database-export directory.
+- **Import Database**: `npm run db:import` - Imports data from the database-export directory into the current database.
+- **Database Summary**: After export, a summary of exported records by table is displayed.
 
-```bash
+### Database Schema Management
+
+- **Generate Schema SQL**: `npm run db:schema` - Generates complete DDL SQL from the current database, including sequences.
+- **Reset Sequences**: `npm run db:reset-sequences` - Resets PostgreSQL sequences based on current table data.
+
+### Database Backup and Restore
+
+- **Create Database Dump**: `npm run db:dump` - Creates a complete database dump containing both schema and data.
+- **Check Database Structure**: `npm run db:check` - Analyzes the database structure, tables, and sequences.
+
+## Understanding the Tools
+
+### Export Database
+
+This tool exports all data from the current database to JSON files. Each table is exported to a separate file in the database-export directory.
+
+```
 npm run db:export
-# or
-node scripts/run-db-export.js
 ```
 
-### Database Import
+### Import Database
 
-Imports data from JSON files in the `database-export` directory into the database.
+This tool imports data from JSON files in the database-export directory into the current database. It will clear the existing data first.
 
-**WARNING**: This tool will truncate existing tables before importing data. Use with caution.
-
-```bash
+```
 npm run db:import
-# or
-node scripts/run-db-import.js
 ```
 
-### Schema SQL Generation
+### Generate Schema SQL
 
-Generates a complete SQL schema including tables, constraints, indexes, and sequence reset statements.
+This tool generates a complete DDL SQL script that can recreate the database schema.
 
-```bash
+```
 npm run db:schema
-# or
-node scripts/run-schema-sql.js
 ```
 
-### Sequence Reset
+### Reset Sequences
 
-Resets all sequence values to the current maximum ID value + 1. This is useful after importing data to ensure that new records get correct ID values.
+This tool resets all PostgreSQL sequences to the correct values based on the current data.
 
-```bash
+```
 npm run db:reset-sequences
-# or
-node scripts/run-sequence-reset.js
 ```
 
-## Workflow Examples
+### Create Database Dump
 
-### Migrating Database Between Environments
+This tool creates a complete database dump containing both schema and data. By default, it runs in simulation mode.
 
-1. Export data from source environment:
-   ```bash
+```
+npm run db:dump
+```
+
+To create an actual dump:
+
+```
+./scripts/pg-dump.sh --execute
+```
+
+### Check Database Structure
+
+This tool analyzes the database structure, tables, and sequences.
+
+```
+npm run db:check
+```
+
+## Migration Process
+
+To migrate data between environments:
+
+1. **Export data** from the source environment:
+   ```
    npm run db:export
    ```
 
-2. Copy the `database-export` directory to the target environment
+2. Copy the database-export directory to the target environment.
 
-3. Import data in the target environment:
-   ```bash
+3. **Import data** into the target environment:
+   ```
    npm run db:import
    ```
 
-4. Reset sequences in the target environment:
-   ```bash
+4. **Reset sequences** in the target environment:
+   ```
    npm run db:reset-sequences
    ```
 
-### Fixing Sequence Values
+## Database Dump Process
 
-If you encounter errors like "duplicate key value violates unique constraint" when inserting new records, the sequence values might be out of sync. Use the sequence reset tool:
+To create a complete database dump:
 
-```bash
-npm run db:reset-sequences
-```
+1. **Check the database structure**:
+   ```
+   npm run db:check
+   ```
 
-## Implementation Details
+2. **Create a database dump** (simulation mode):
+   ```
+   npm run db:dump
+   ```
 
-- All export/import operations use raw SQL queries via the `postgres` library
-- Sequence reset operations identify and update all sequences associated with ID columns
-- Schema generation includes sequence reset statements in the generated SQL file
-- Database operations are performed with proper transaction handling and error reporting
+3. **Create an actual database dump**:
+   ```
+   ./scripts/pg-dump.sh --execute
+   ```
+
+## Safety Measures
+
+- Import operations will clear existing data in the target tables.
+- The import tool requires confirmation before proceeding.
+- Database dump operations run in simulation mode by default.
+- Sequence reset operations are safe to run multiple times.

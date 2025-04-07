@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /**
  * Command-line script to optimize videos for web display
  * 
@@ -12,118 +10,143 @@
  *   node optimize-video-cli.js video.mp4 ./optimized/ 1280x720 1500
  */
 
-import { execSync } from 'child_process';
+import { exec } from 'child_process';
+import { promisify } from 'util';
 import fs from 'fs';
 import path from 'path';
 
-// Check arguments
-const args = process.argv.slice(2);
-if (args.length === 0) {
-  console.error('Error: Missing input video path.');
-  console.error('Usage: node optimize-video-cli.js inputVideo [outputDir] [resolution] [bitrate]');
-  process.exit(1);
-}
-
-const inputPath = args[0];
-const outputDir = args[1] ? args[1] : path.dirname(inputPath);
-const resolution = args[2] || '';
-const bitrate = args[3] || '';
+const execAsync = promisify(exec);
 
 // Check if ffmpeg is installed
 function checkFfmpeg() {
-  try {
-    execSync('ffmpeg -version', { stdio: 'ignore' });
-    return true;
-  } catch (error) {
-    console.error('Error: ffmpeg is not installed or not in the PATH.');
-    console.error('Please install ffmpeg to use this script.');
-    return false;
-  }
+  return new Promise((resolve, reject) => {
+    exec('ffmpeg -version', (error) => {
+      if (error) {
+        console.error('Error: ffmpeg is not installed or not in the PATH');
+        console.error('Please install ffmpeg to use this script');
+        reject(error);
+      } else {
+        resolve();
+      }
+    });
+  });
 }
 
 // Get video information using ffprobe
 function getVideoInfo(videoPath) {
-  try {
-    const output = execSync(`ffprobe -v error -select_streams v:0 -show_entries stream=width,height,duration,codec_name -of json "${videoPath}"`).toString();
-    return JSON.parse(output).streams[0];
-  } catch (error) {
-    console.error('Error getting video information:', error);
-    return null;
-  }
+  return new Promise((resolve, reject) => {
+    exec(`ffprobe -v error -select_streams v:0 -show_entries stream=width,height,duration,bit_rate -of json "${videoPath}"`, (error, stdout) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      try {
+        const info = JSON.parse(stdout);
+        resolve(info.streams[0]);
+      } catch (e) {
+        reject(e);
+      }
+    });
+  });
 }
 
 async function processVideo() {
-  if (!checkFfmpeg()) {
-    process.exit(1);
-  }
-
-  if (!fs.existsSync(inputPath)) {
-    console.error(`Error: File does not exist: ${inputPath}`);
-    process.exit(1);
-  }
-
-  // Create output directory if it doesn't exist
-  if (!fs.existsSync(outputDir)) {
-    fs.mkdirSync(outputDir, { recursive: true });
-    console.log(`Created output directory: ${outputDir}`);
-  }
-
-  const videoInfo = getVideoInfo(inputPath);
-  if (!videoInfo) {
-    console.error('Error: Could not get video information.');
-    process.exit(1);
-  }
-
-  console.log('Video information:');
-  console.log(`Codec: ${videoInfo.codec_name}`);
-  console.log(`Resolution: ${videoInfo.width}x${videoInfo.height}`);
-  console.log(`Duration: ${videoInfo.duration} seconds`);
-
-  const parsedPath = path.parse(inputPath);
-  const baseName = parsedPath.name;
-  
-  // Define output paths
-  const outputVideoPath = path.join(outputDir, `${baseName}-optimized.mp4`);
-  const posterPath = path.join(outputDir, `${baseName}-poster.jpg`);
-
-  let scaleFilter = '';
-  if (resolution && resolution.match(/^\d+x\d+$/)) {
-    scaleFilter = `-vf scale=${resolution}`;
-  }
-
-  let bitrateOption = '';
-  if (bitrate && !isNaN(parseInt(bitrate))) {
-    bitrateOption = `-b:v ${bitrate}k`;
-  }
-  
-  console.log('Processing video...');
-  
-  // Optimize the video
   try {
-    const command = `ffmpeg -i "${inputPath}" ${scaleFilter} ${bitrateOption} -c:v libx264 -preset slow -profile:v main -level 3.1 -pix_fmt yuv420p -movflags +faststart -c:a aac -b:a 128k "${outputVideoPath}"`;
-    console.log(`Running command: ${command}`);
-    execSync(command, { stdio: 'inherit' });
+    // Check command line arguments
+    const args = process.argv.slice(2);
+    if (args.length === 0) {
+      console.error('Error: Missing input video file');
+      console.log('Usage: node optimize-video-cli.js inputVideo [outputDir] [resolution] [bitrate]');
+      return;
+    }
     
-    // Extract poster image from the middle of the video
-    const posterCommand = `ffmpeg -i "${outputVideoPath}" -ss ${parseFloat(videoInfo.duration) / 2} -vframes 1 -quality 90 "${posterPath}"`;
-    console.log(`Generating poster image: ${posterCommand}`);
-    execSync(posterCommand, { stdio: 'inherit' });
+    // Validate ffmpeg installation
+    await checkFfmpeg();
     
-    console.log('\nVideo processing completed!');
-    console.log(`Optimized video: ${outputVideoPath}`);
-    console.log(`Poster image: ${posterPath}`);
+    const inputVideo = args[0];
     
-    // Get file sizes for comparison
-    const originalSize = fs.statSync(inputPath).size;
-    const optimizedSize = fs.statSync(outputVideoPath).size;
-    const compressionRatio = (originalSize / optimizedSize).toFixed(2);
+    // Check if input file exists
+    if (!fs.existsSync(inputVideo)) {
+      console.error(`Error: File not found at ${inputVideo}`);
+      return;
+    }
     
-    console.log('\nFile size comparison:');
-    console.log(`Original: ${(originalSize / 1024 / 1024).toFixed(2)} MB`);
-    console.log(`Optimized: ${(optimizedSize / 1024 / 1024).toFixed(2)} MB`);
-    console.log(`Compression ratio: ${compressionRatio}x`);
+    // Get the base name, extension and directory
+    const inputExt = path.extname(inputVideo);
+    const inputBase = path.basename(inputVideo, inputExt);
+    const inputDir = path.dirname(inputVideo);
+    
+    // Get optional parameters
+    const outputDir = args[1] || inputDir;
+    const targetRes = args[2] || ''; // e.g., 1280x720
+    const targetBitrate = args[3] || ''; // e.g., 1500 (kbps)
+    
+    // Create output directory if it doesn't exist
+    if (!fs.existsSync(outputDir)) {
+      fs.mkdirSync(outputDir, { recursive: true });
+    }
+
+    // Set output paths
+    const outputVideo = path.join(outputDir, `${inputBase}-optimized.mp4`);
+    const posterImage = path.join(outputDir, `${inputBase}-poster.jpg`);
+    
+    // Get video details
+    console.log('Analyzing video...');
+    const videoInfo = await getVideoInfo(inputVideo);
+    console.log('Video information:');
+    console.log(`  - Resolution: ${videoInfo.width}x${videoInfo.height}`);
+    console.log(`  - Duration: ${videoInfo.duration} seconds`);
+    console.log(`  - Bitrate: ${videoInfo.bit_rate ? Math.round(videoInfo.bit_rate / 1000) + ' kbps' : 'unknown'}`);
+    
+    // Prepare ffmpeg command
+    let ffmpegCmd = 'ffmpeg -i "' + inputVideo + '" -c:v libx264 -preset slow -pix_fmt yuv420p';
+    
+    // Add resolution parameters if specified
+    if (targetRes) {
+      ffmpegCmd += ` -vf scale=${targetRes}`;
+    }
+    
+    // Add bitrate parameters if specified
+    if (targetBitrate) {
+      ffmpegCmd += ` -b:v ${targetBitrate}k`;
+    }
+    
+    // Add audio parameters
+    ffmpegCmd += ' -c:a aac -b:a 128k';
+    
+    // Add output file
+    ffmpegCmd += ` -y "${outputVideo}"`;
+    
+    console.log('\nOptimizing video...');
+    console.log(`Command: ${ffmpegCmd}`);
+    
+    const startTime = Date.now();
+    await execAsync(ffmpegCmd);
+    const endTime = Date.now();
+    
+    // Get file sizes
+    const inputStats = fs.statSync(inputVideo);
+    const outputStats = fs.statSync(outputVideo);
+    const inputSize = inputStats.size / (1024 * 1024);
+    const outputSize = outputStats.size / (1024 * 1024);
+    const compressionRatio = (1 - (outputSize / inputSize)) * 100;
+    
+    console.log('\nVideo optimization complete!');
+    console.log(`Time taken: ${((endTime - startTime) / 1000).toFixed(2)} seconds`);
+    console.log(`Original size: ${inputSize.toFixed(2)} MB`);
+    console.log(`Optimized size: ${outputSize.toFixed(2)} MB`);
+    console.log(`Compression ratio: ${compressionRatio.toFixed(2)}%`);
+    
+    // Generate poster image
+    console.log('\nGenerating poster image...');
+    const posterCmd = `ffmpeg -i "${outputVideo}" -ss 00:00:01 -vframes 1 -y "${posterImage}"`;
+    await execAsync(posterCmd);
+    
+    console.log(`Poster image saved to: ${posterImage}`);
+    console.log(`Optimized video saved to: ${outputVideo}`);
+    
   } catch (error) {
-    console.error('Error processing video:', error);
+    console.error('Error:', error);
     process.exit(1);
   }
 }
