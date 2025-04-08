@@ -27,7 +27,8 @@ const NewsletterOptions = () => {
     try {
       await subscribe({
         email: data.email,
-        subscribed: true
+        firstName: "",
+        lastName: ""
       });
       setIsSubmitted(true);
     } catch (error) {

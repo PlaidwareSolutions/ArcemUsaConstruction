@@ -6,8 +6,11 @@ import { motion } from 'framer-motion';
 import { useTeamMembers } from '@/hooks/useTeamMembers';
 import { Loader2 } from 'lucide-react';
 import { TeamMember } from '@shared/schema';
+import { useAuth } from '@/contexts/AuthContext';
 
 const About = () => {
+  // Explicitly use useAuth at the top of the component to maintain hook order
+  const { isAdmin } = useAuth();
   const { activeTeamMembers: teamMembers, isLoadingActive: isLoadingTeamMembers } = useTeamMembers();
   
   useEffect(() => {

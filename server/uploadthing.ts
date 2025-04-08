@@ -79,17 +79,20 @@ export const uploadRouter = {
     pdf: { maxFileSize: "8MB", maxFileCount: 3 }
   })
     .middleware(({ req }) => {
-      try {
-        const session = isAuthenticated(req as any);
-        console.log("📤 Quote document upload middleware executed for user:", session.userId);
-        return { userId: session.userId };
-      } catch (error) {
-        console.error("❌ Quote document upload authorization error:", error);
-        throw new UploadThingError("Unauthorized");
-      }
+      // For quote requests, we allow anonymous uploads
+      // This enables visitors to attach files without being logged in
+      console.log("📤 Quote document upload middleware executed (anonymous allowed)");
+      return { 
+        isAnonymous: true,
+        userId: req.user?.id || null 
+      };
     })
     .onUploadComplete(({ metadata, file }) => {
-      console.log(`✅ Quote document upload complete from user ${metadata?.userId || 'unknown'}`);
+      if (metadata?.isAnonymous) {
+        console.log(`✅ Quote document upload complete (anonymous visitor)`);
+      } else {
+        console.log(`✅ Quote document upload complete from user ${metadata?.userId || 'unknown'}`);
+      }
       
       console.log("📁 Quote document file details:", {
         name: file.name,

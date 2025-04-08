@@ -251,8 +251,8 @@ const Blog = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filteredPosts?.map(post => (
-                <div key={post.id} className="bg-white shadow-md hover:shadow-lg transition-shadow duration-300 reveal active">
+              {filteredPosts?.map((post, index) => (
+                <div key={`${post.id}-${index}-${post.slug}`} className="bg-white shadow-md hover:shadow-lg transition-shadow duration-300 reveal active">
                   <Link href={`/blog/${post.slug}`} className="block overflow-hidden relative h-56">
                     <img 
                       src={post.image || '/images/placeholder-blog.jpg'} 

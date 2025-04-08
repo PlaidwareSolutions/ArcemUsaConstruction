@@ -294,7 +294,8 @@ export const insertMessageSchema = createInsertSchema(messages).omit({
 export const newsletterSubscribers = pgTable("newsletter_subscribers", {
   id: serial("id").primaryKey(),
   email: text("email").notNull().unique(),
-  name: text("name"),
+  firstName: text("first_name"),
+  lastName: text("last_name"),
   subscribed: boolean("subscribed").default(true),
   createdAt: timestamp("created_at").defaultNow(),
 });

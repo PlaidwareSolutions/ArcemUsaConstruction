@@ -2304,6 +2304,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post(`${apiRouter}/newsletter/subscribe`, async (req: Request, res: Response) => {
     try {
       // Validate the input data
+      console.log("[NEWSLETTER] Subscription request received:", JSON.stringify({ 
+        ...req.body, 
+        email: req.body.email ? `${req.body.email.substring(0, 3)}***@***.***` : undefined 
+      }));
+      
       const subscriberData = insertNewsletterSubscriberSchema.parse(req.body);
       
       // Check if email already exists
@@ -2331,12 +2336,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.error("[NEWSLETTER] Validation error:", error.errors);
         return res.status(400).json({ 
           message: "Invalid subscription data", 
           errors: error.errors 
         });
       }
-      console.error("Newsletter subscription error:", error);
+      console.error("[NEWSLETTER] Subscription error:", error);
       res.status(500).json({ message: "Failed to process newsletter subscription" });
     }
   });

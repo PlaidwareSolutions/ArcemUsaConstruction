@@ -2,9 +2,11 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Testimonial, PublicTestimonial, InsertTestimonial } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const useTestimonials = () => {
   const { toast } = useToast();
+  const { isAdmin } = useAuth();
 
   // Get all approved testimonials
   const {
@@ -25,7 +27,7 @@ export const useTestimonials = () => {
   } = useQuery<Testimonial[]>({
     queryKey: ["/api/admin/testimonials"],
     retry: 1,
-    // We don't set enabled: false to ensure data is loaded in admin pages
+    enabled: isAdmin, // Only fetch if user is admin
   });
 
   // Get pending testimonials - admin only
@@ -37,7 +39,7 @@ export const useTestimonials = () => {
   } = useQuery<Testimonial[]>({
     queryKey: ["/api/admin/testimonials/pending"],
     retry: 1,
-    // We don't set enabled: false to ensure data is loaded in admin pages
+    enabled: isAdmin, // Only fetch if user is admin
   });
 
   // Mutation to submit a new testimonial
@@ -149,14 +151,38 @@ export const useTestimonials = () => {
   };
 
   const approveTestimonial = (id: number) => {
+    if (!isAdmin) {
+      toast({
+        title: "Permission denied",
+        description: "You need admin privileges to approve testimonials.",
+        variant: "destructive",
+      });
+      return;
+    }
     approveTestimonialMutation.mutate(id);
   };
 
   const revokeApproval = (id: number) => {
+    if (!isAdmin) {
+      toast({
+        title: "Permission denied",
+        description: "You need admin privileges to revoke testimonial approval.",
+        variant: "destructive",
+      });
+      return;
+    }
     revokeApprovalMutation.mutate(id);
   };
 
   const deleteTestimonial = (id: number) => {
+    if (!isAdmin) {
+      toast({
+        title: "Permission denied",
+        description: "You need admin privileges to delete testimonials.",
+        variant: "destructive",
+      });
+      return;
+    }
     deleteTestimonialMutation.mutate(id);
   };
 

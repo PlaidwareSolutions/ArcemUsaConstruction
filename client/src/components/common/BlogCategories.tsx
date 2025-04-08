@@ -24,11 +24,24 @@ export const BlogCategories = ({ postId, className = "", variant = "outline" }: 
     return null;
   }
 
+  // Debug: Log categories to find duplicates
+  console.log(`Categories for post ${postId}:`, categories);
+  
+  // Create a Map to deduplicate categories
+  const uniqueCategories = new Map<number, Category>();
+  categories.forEach(cat => {
+    if (!uniqueCategories.has(cat.id)) {
+      uniqueCategories.set(cat.id, cat);
+    } else {
+      console.warn(`Duplicate category ID ${cat.id} found for post ${postId}`);
+    }
+  });
+
   return (
     <div className={`flex flex-wrap gap-1.5 ${className}`}>
-      {categories.map((cat: Category) => (
+      {Array.from(uniqueCategories.values()).map((cat: Category, index) => (
         <Badge
-          key={cat.id}
+          key={`${postId}-${cat.id}-${index}`}
           variant={variant}
           className="text-xs font-medium px-3 py-1 border-gray-300"
         >

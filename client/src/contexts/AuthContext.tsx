@@ -37,7 +37,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userData = await apiRequest<AuthUser>({
         url: '/api/user',
         method: 'GET',
-        on401: 'returnNull'
+        on401: 'returnNull',
+        // Suppress console logs for authentication check
+        suppressLogs: true
       });
       
       if (userData) {
@@ -48,7 +50,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return false;
       }
     } catch (error) {
-      console.error('Auth check error:', error);
+      // Don't log auth check errors to console when the user is not logged in
+      // as this is an expected state and not an actual error
       setUser(null);
       return false;
     } finally {
@@ -94,10 +97,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Clear any authenticated queries
       queryClient.clear();
       
-      // Call the logout API
+      // Call the logout API - use parseResponse: false since it returns text/plain "OK"
       await apiRequest({
         url: '/api/logout',
-        method: 'POST'
+        method: 'POST',
+        parseResponse: false, // Don't try to parse the response as JSON
+        suppressLogs: true    // Suppress any errors
       });
       
       // Add a small delay to ensure the logout API call completes
@@ -108,9 +113,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       return; // Early return as page will reload
     } catch (error) {
-      console.error('Logout error:', error);
+      // We should never get here with suppressLogs, but just in case
       // Even if there's an error, set user to null
       setUser(null);
+      
+      // Force a complete page reload anyway to clean up state
+      window.location.href = '/';
     } finally {
       setIsLoading(false);
     }

@@ -56,9 +56,9 @@ const BlogSection = () => {
             </div>
           ) : (
             // Render actual blog posts
-            recentPosts?.map((post) => (
+            recentPosts?.map((post, index) => (
               <BlogCard 
-                key={post.id}
+                key={`${post.id}-${index}`}
                 id={post.id}
                 slug={post.slug}
                 title={post.title}

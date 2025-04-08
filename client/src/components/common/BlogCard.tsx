@@ -53,8 +53,8 @@ const BlogCard = ({ id, slug, title, excerpt, imageUrl, date, category }: BlogCa
             <>
               <span className="mx-2">•</span>
               <div className="flex flex-wrap gap-1">
-                {categories.map(cat => (
-                  <Badge key={cat.id} variant="outline" className="text-xs">{cat.name}</Badge>
+                {categories.map((cat, index) => (
+                  <Badge key={`${cat.id}-${index}`} variant="outline" className="text-xs">{cat.name}</Badge>
                 ))}
               </div>
             </>
@@ -74,8 +74,8 @@ const BlogCard = ({ id, slug, title, excerpt, imageUrl, date, category }: BlogCa
         {/* Tags */}
         {tags && tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-4">
-            {tags.map((tag) => (
-              <span key={tag.id} className="text-xs text-gray-600 bg-gray-100 px-3 py-1 rounded-full font-medium">
+            {tags.map((tag, index) => (
+              <span key={`${tag.id}-${index}`} className="text-xs text-gray-600 bg-gray-100 px-3 py-1 rounded-full font-medium">
                 #{tag.name}
               </span>
             ))}

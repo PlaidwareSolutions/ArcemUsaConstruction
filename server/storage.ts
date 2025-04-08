@@ -132,6 +132,7 @@ export interface IStorage {
   getNewsletterSubscriberByEmail(email: string): Promise<NewsletterSubscriber | undefined>;
   createNewsletterSubscriber(subscriber: InsertNewsletterSubscriber): Promise<NewsletterSubscriber>;
   updateNewsletterSubscriber(id: number, subscriber: Partial<InsertNewsletterSubscriber>): Promise<NewsletterSubscriber | undefined>;
+  updateNewsletterSubscriberStatus(id: number, subscribed: boolean): Promise<NewsletterSubscriber | undefined>;
   deleteNewsletterSubscriber(id: number): Promise<boolean>;
   
   // Quote Requests
@@ -1136,6 +1137,19 @@ export class MemStorage implements IStorage {
     const updatedSubscriber: NewsletterSubscriber = {
       ...subscriber,
       ...updates
+    };
+
+    this.newsletterSubscribers.set(id, updatedSubscriber);
+    return updatedSubscriber;
+  }
+
+  async updateNewsletterSubscriberStatus(id: number, subscribed: boolean): Promise<NewsletterSubscriber | undefined> {
+    const subscriber = this.newsletterSubscribers.get(id);
+    if (!subscriber) return undefined;
+
+    const updatedSubscriber: NewsletterSubscriber = {
+      ...subscriber,
+      subscribed
     };
 
     this.newsletterSubscribers.set(id, updatedSubscriber);
