@@ -297,7 +297,7 @@ const Services = () => {
                     
                     <Link 
                       href={`/services/${service.id}/${service.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
-                      className="bg-[#1E90DB] hover:bg-[#1670B0] text-white py-2 px-6 font-montserrat font-medium text-sm tracking-wider inline-block transition-colors"
+                      className="bg-[#1E90DB] hover:bg-[#1670B0] text-white py-2 px-6 font-montserrat font-medium text-sm tracking-wider inline-block transition-colors rounded-md"
                     >
                       LEARN MORE
                     </Link>
@@ -366,7 +366,7 @@ const Services = () => {
             </p>
             <Link
               href="/contact" 
-              className="bg-[#1E90DB] hover:bg-[#1670B0] text-white py-3 px-8 font-montserrat font-medium text-sm tracking-wider inline-block transition-colors"
+              className="bg-[#1E90DB] hover:bg-[#1670B0] text-white py-3 px-8 font-montserrat font-medium text-sm tracking-wider inline-block transition-colors rounded-md"
             >
               REACH US
             </Link>
