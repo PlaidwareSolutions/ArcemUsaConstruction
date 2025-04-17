@@ -40,7 +40,7 @@ const About = () => {
         >
           <h1 className="text-4xl md:text-5xl font-montserrat font-bold mb-6">About ARCEM</h1>
           <p className="text-lg max-w-3xl">
-            We've been building excellence and crafting futures for over three decades.
+            We've been building excellence and crafting futures for over a decade.
           </p>
         </motion.div>
       </div>
