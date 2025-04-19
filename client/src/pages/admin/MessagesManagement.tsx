@@ -45,12 +45,15 @@ const MessagesManagement = () => {
 
   const deleteMessageMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await apiRequest('DELETE', `/api/messages/${id}`);
-      if (response.status === 404) {
-        // Message already deleted, consider this a success
+      try {
+        const response = await apiRequest('DELETE', `/api/messages/${id}`);
         return { success: true };
+      } catch (error) {
+        if ((error as any)?.message?.includes('404')) {
+          return { success: true }; // Consider already deleted as success
+        }
+        throw error;
       }
-      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/messages'] });
