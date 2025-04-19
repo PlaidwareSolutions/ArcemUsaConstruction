@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const MessagesManagement = () => {
   const { toast } = useToast();
-  
+
   const { data: messages, isLoading, error } = useQuery<Message[]>({
     queryKey: ['/api/messages'],
     queryFn: async () => {
@@ -42,12 +42,13 @@ const MessagesManagement = () => {
       });
     }
   });
-  
+
   const deleteMessageMutation = useMutation({
     mutationFn: async (id: number) => {
       const response = await apiRequest('DELETE', `/api/messages/${id}`);
-      if (!response.ok) {
-        throw new Error('Failed to delete message');
+      if (response.status === 404) {
+        // Message already deleted, consider this a success
+        return { success: true };
       }
       return await response.json();
     },
@@ -60,6 +61,7 @@ const MessagesManagement = () => {
       });
     },
     onError: (error) => {
+      console.error('Delete message error:', error);
       toast({
         title: 'Error',
         description: 'Failed to delete message',
@@ -71,7 +73,7 @@ const MessagesManagement = () => {
   const handleMarkAsRead = (id: number) => {
     markAsReadMutation.mutate(id);
   };
-  
+
   const handleDeleteMessage = (id: number) => {
     if (window.confirm('Are you sure you want to delete this message? This action cannot be undone.')) {
       deleteMessageMutation.mutate(id);
@@ -115,7 +117,7 @@ const MessagesManagement = () => {
       <div className="container mx-auto px-4 md:px-8">
         <div className="flex flex-col md:flex-row gap-8">
           <AdminNav activePage="messages" />
-          
+
           <div className="flex-1">
             <div className="bg-white rounded-lg shadow-md p-6 mb-8">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
@@ -125,7 +127,7 @@ const MessagesManagement = () => {
                     View and manage incoming messages from website visitors.
                   </p>
                 </div>
-                
+
                 {messages && messages.length > 0 && (
                   <ExportButton
                     data={messages}
@@ -136,7 +138,7 @@ const MessagesManagement = () => {
                   />
                 )}
               </div>
-            
+
               {messages && messages.length === 0 ? (
                 <div className="text-center py-8">
                   <p className="text-gray-500">No messages received yet.</p>
@@ -190,7 +192,7 @@ const MessagesManagement = () => {
                 </div>
               )}
             </div>
-            
+
             {messages && messages.length > 0 && (
               <div className="bg-white rounded-lg shadow-md p-6">
                 <h2 className="text-xl font-bold mb-4">Message Details</h2>
