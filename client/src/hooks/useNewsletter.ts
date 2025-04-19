@@ -10,7 +10,7 @@ export const useNewsletter = () => {
   const subscriptionMutation = useMutation({
     mutationFn: async (data: InsertNewsletterSubscriber) => {
       const res = await apiRequest("POST", "/api/newsletter/subscribe", data);
-      return await res.json();
+      return res;
     },
     onSuccess: (data) => {
       toast({
