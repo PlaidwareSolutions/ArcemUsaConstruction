@@ -16,8 +16,13 @@ const MessagesManagement = () => {
   const { data: messages, isLoading, error } = useQuery<Message[]>({
     queryKey: ['/api/messages'],
     queryFn: async () => {
-      const res = await apiRequest('GET', '/api/messages');
-      return await res.json();
+      try {
+        const res = await apiRequest('GET', '/api/messages');
+        return res;
+      } catch (err) {
+        console.error('Error fetching messages:', err);
+        throw err;
+      }
     }
   });
 
