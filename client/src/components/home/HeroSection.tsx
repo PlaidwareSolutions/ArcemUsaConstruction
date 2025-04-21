@@ -90,7 +90,7 @@ aria-label="Construction site timelapse video showing building progress"
       </div>
 
       {/* Image Slider - positioned at 80% from the top */}
-      <div className="absolute left-0 right-0 z-30" style={{ top: "75%" }}>
+      <div className="absolute left-0 right-0 z-30" style={{ top: "70%" }}>
         <div className="text-center mb-2">
           <h3 className="text-xl font-semibold text-amber-400" style={{ color: "#1e90db" }}>OUR CLIENTS</h3>
         </div>
@@ -101,7 +101,7 @@ aria-label="Construction site timelapse video showing building progress"
       <div className="hero-overlay absolute inset-0 z-10"></div>
 
       {/* Content */}
-      <div className="relative z-20 container mx-auto px-4 h-full flex flex-col justify-center">
+      <div className="relative z-20 container mx-auto px-4 h-full flex flex-col justify-center pb-[20vh]">
         <div className="max-w-3xl">
           <h1 className="text-4xl md:text-6xl text-white font-montserrat font-bold leading-tight mb-6 reveal">
             Building Excellence, <br />
