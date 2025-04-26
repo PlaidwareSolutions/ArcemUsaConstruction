@@ -95,17 +95,6 @@ const Footer = () => {
                   <YoutubeIcon className="w-5 h-5" />
                 </a>
               )}
-              {youtubeUrl && (
-                <a
-                  href={youtubeUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-gray-400 hover:text-[#1E90DB] transition-colors"
-                  aria-label="YouTube"
-                >
-                  <YoutubeIcon className="w-5 h-5" />
-                </a>
-              )}
             </div>
 
             {/* Contact Info with Icons */}
