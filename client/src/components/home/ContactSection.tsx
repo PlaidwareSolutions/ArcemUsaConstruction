@@ -23,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue 
 } from '@/components/ui/select';
-import { MapPin, Phone, Mail, Facebook, Github, Instagram, Linkedin } from 'lucide-react';
+import { MapPin, Phone, Mail, Facebook, Github, Instagram, Linkedin, Twitter, Youtube } from 'lucide-react';
 import { InsertMessage, insertMessageSchema } from '@shared/schema';
 
 const ContactSection = () => {
