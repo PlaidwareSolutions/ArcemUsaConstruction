@@ -119,14 +119,17 @@ const ContactSection = () => {
               <a href="#" className="text-white hover:text-[#1E90DB] transition-colors" aria-label="Facebook">
                 <Facebook className="w-6 h-6" />
               </a>
-              <a href="#" className="text-white hover:text-[#1E90DB] transition-colors" aria-label="GitHub">
-                <Github className="w-6 h-6" />
+              <a href="#" className="text-white hover:text-[#1E90DB] transition-colors" aria-label="Twitter">
+                <Twitter className="w-6 h-6" />
               </a>
               <a href="#" className="text-white hover:text-[#1E90DB] transition-colors" aria-label="Instagram">
                 <Instagram className="w-6 h-6" />
               </a>
               <a href="#" className="text-white hover:text-[#1E90DB] transition-colors" aria-label="LinkedIn">
                 <Linkedin className="w-6 h-6" />
+              </a>
+              <a href="#" className="text-white hover:text-[#1E90DB] transition-colors" aria-label="YouTube">
+                <Youtube className="w-6 h-6" />
               </a>
             </div>
           </div>
