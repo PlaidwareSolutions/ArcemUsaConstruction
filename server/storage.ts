@@ -16,7 +16,8 @@ import {
   subcontractors, type Subcontractor, type InsertSubcontractor,
   vendors, type Vendor, type InsertVendor,
   jobPostings, type JobPosting, type InsertJobPosting,
-  teamMembers, type TeamMember, type InsertTeamMember
+  teamMembers, type TeamMember, type InsertTeamMember,
+  siteSettings, type SiteSetting, type InsertSiteSetting
 } from "@shared/schema";
 
 // modify the interface with any CRUD methods
@@ -41,7 +42,7 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  
+
   // Projects
   getProjects(): Promise<Project[]>;
   getProject(id: number): Promise<Project | undefined>;
@@ -49,7 +50,7 @@ export interface IStorage {
   createProject(project: InsertProject): Promise<Project>;
   updateProject(id: number, project: Partial<InsertProject>): Promise<Project | undefined>;
   deleteProject(id: number): Promise<boolean>;
-  
+
   // Project Gallery
   getProjectGallery(projectId: number): Promise<ProjectGallery[]>;
   addProjectGalleryImage(galleryImage: InsertProjectGallery): Promise<ProjectGallery>;
@@ -57,17 +58,17 @@ export interface IStorage {
   deleteProjectGalleryImage(id: number): Promise<boolean>;
   deleteAllProjectGalleryImages(projectId: number): Promise<boolean>;
   setProjectFeatureImage(projectId: number, galleryImageId: number): Promise<ProjectGallery | undefined>;
-  
+
   // Blog Categories
   getBlogCategories(): Promise<BlogCategory[]>;
   getBlogCategory(id: number): Promise<BlogCategory | undefined>;
   createBlogCategory(category: InsertBlogCategory): Promise<BlogCategory>;
-  
+
   // Blog Tags
   getBlogTags(): Promise<BlogTag[]>;
   getBlogTag(id: number): Promise<BlogTag | undefined>;
   createBlogTag(tag: InsertBlogTag): Promise<BlogTag>;
-  
+
   // Blog Posts
   getBlogPosts(): Promise<BlogPost[]>;
   getPublishedBlogPosts(): Promise<BlogPost[]>;
@@ -76,24 +77,24 @@ export interface IStorage {
   createBlogPost(post: InsertBlogPost): Promise<BlogPost>;
   updateBlogPost(id: number, post: Partial<InsertBlogPost>): Promise<BlogPost | undefined>;
   deleteBlogPost(id: number): Promise<boolean>;
-  
+
   // Blog Gallery
   getBlogGallery(postId: number): Promise<BlogGallery[]>;
   addBlogGalleryImage(galleryImage: InsertBlogGallery): Promise<BlogGallery>;
   updateBlogGalleryImage(id: number, galleryImage: Partial<InsertBlogGallery>): Promise<BlogGallery | undefined>;
   deleteBlogGalleryImage(id: number): Promise<boolean>;
   deleteAllBlogGalleryImages(postId: number): Promise<boolean>;
-  
+
   // Blog Post Categories
   getBlogPostCategories(postId: number): Promise<SimpleBlogCategory[]>;
   linkBlogPostCategories(postId: number, categoryIds: number[]): Promise<void>;
   updateBlogPostCategories(postId: number, categoryIds: number[]): Promise<void>;
-  
+
   // Blog Post Tags
   getBlogPostTags(postId: number): Promise<SimpleBlogTag[]>;
   linkBlogPostTags(postId: number, tagIds: number[]): Promise<void>;
   updateBlogPostTags(postId: number, tagIds: number[]): Promise<void>;
-  
+
   // Testimonials
   getTestimonials(): Promise<Testimonial[]>;
   getApprovedTestimonials(): Promise<Testimonial[]>;
@@ -104,28 +105,28 @@ export interface IStorage {
   approveTestimonial(id: number): Promise<Testimonial | undefined>;
   revokeTestimonialApproval(id: number): Promise<Testimonial | undefined>;
   deleteTestimonial(id: number): Promise<boolean>;
-  
+
   // Services
   getServices(): Promise<Service[]>;
   getService(id: number): Promise<Service | undefined>;
   createService(service: InsertService): Promise<Service>;
   updateService(id: number, service: Partial<InsertService>): Promise<Service | undefined>;
   deleteService(id: number): Promise<boolean>;
-  
+
   // Service Gallery
   getServiceGallery(serviceId: number): Promise<ServiceGallery[]>;
   addServiceGalleryImage(galleryImage: InsertServiceGallery): Promise<ServiceGallery>;
   updateServiceGalleryImage(id: number, galleryImage: Partial<InsertServiceGallery>): Promise<ServiceGallery | undefined>;
   deleteServiceGalleryImage(id: number): Promise<boolean>;
   deleteAllServiceGalleryImages(serviceId: number): Promise<boolean>;
-  
+
   // Messages/Contact
   getMessages(): Promise<Message[]>;
   getMessage(id: number): Promise<Message | undefined>;
   createMessage(message: InsertMessage): Promise<Message>;
   markMessageAsRead(id: number): Promise<Message | undefined>;
   deleteMessage(id: number): Promise<boolean>;
-  
+
   // Newsletter Subscribers
   getNewsletterSubscribers(): Promise<NewsletterSubscriber[]>;
   getNewsletterSubscriber(id: number): Promise<NewsletterSubscriber | undefined>;
@@ -134,7 +135,7 @@ export interface IStorage {
   updateNewsletterSubscriber(id: number, subscriber: Partial<InsertNewsletterSubscriber>): Promise<NewsletterSubscriber | undefined>;
   updateNewsletterSubscriberStatus(id: number, subscribed: boolean): Promise<NewsletterSubscriber | undefined>;
   deleteNewsletterSubscriber(id: number): Promise<boolean>;
-  
+
   // Quote Requests
   getQuoteRequests(): Promise<QuoteRequest[]>;
   getQuoteRequest(id: number): Promise<QuoteRequest | undefined>;
@@ -143,7 +144,7 @@ export interface IStorage {
   markQuoteRequestAsReviewed(id: number): Promise<QuoteRequest | undefined>;
   updateQuoteRequestStatus(id: number, status: string): Promise<QuoteRequest | undefined>;
   deleteQuoteRequest(id: number): Promise<boolean>;
-  
+
   // Quote Request Attachments
   getQuoteRequestAttachments(quoteRequestId: number): Promise<QuoteRequestAttachment[]>;
   createQuoteRequestAttachment(attachment: InsertQuoteRequestAttachment): Promise<QuoteRequestAttachment>;
@@ -158,7 +159,7 @@ export interface IStorage {
   updateSubcontractorStatus(id: number, status: string): Promise<Subcontractor | undefined>;
   updateSubcontractorNotes(id: number, notes: string): Promise<Subcontractor | undefined>;
   deleteSubcontractor(id: number): Promise<boolean>;
-  
+
   // Vendors
   getVendors(): Promise<Vendor[]>;
   getVendor(id: number): Promise<Vendor | undefined>;
@@ -167,7 +168,7 @@ export interface IStorage {
   updateVendorStatus(id: number, status: string): Promise<Vendor | undefined>;
   updateVendorNotes(id: number, notes: string): Promise<Vendor | undefined>;
   deleteVendor(id: number): Promise<boolean>;
-  
+
   // Careers/Jobs
   getJobPostings(): Promise<JobPosting[]>;
   getActiveJobPostings(): Promise<JobPosting[]>;
@@ -178,7 +179,7 @@ export interface IStorage {
   toggleJobPostingActive(id: number): Promise<JobPosting | undefined>;
   toggleJobPostingFeatured(id: number): Promise<JobPosting | undefined>;
   deleteJobPosting(id: number): Promise<boolean>;
-  
+
   // Team Members
   getTeamMembers(): Promise<TeamMember[]>;
   getActiveTeamMembers(): Promise<TeamMember[]>;
@@ -188,6 +189,15 @@ export interface IStorage {
   toggleTeamMemberActive(id: number): Promise<TeamMember | undefined>;
   updateTeamMemberOrder(id: number, order: number): Promise<TeamMember | undefined>;
   deleteTeamMember(id: number): Promise<boolean>;
+
+  // Site Settings
+  getSiteSettings(): Promise<SiteSetting[]>;
+  getSiteSettingsByCategory(category: string): Promise<SiteSetting[]>; 
+  getSiteSettingByKey(key: string): Promise<SiteSetting | undefined>;
+  createSiteSetting(setting: InsertSiteSetting): Promise<SiteSetting>;
+  updateSiteSetting(id: number, setting: Partial<InsertSiteSetting>): Promise<SiteSetting | undefined>;
+  updateSiteSettingByKey(key: string, value: string): Promise<SiteSetting | undefined>;
+  deleteSiteSetting(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -211,7 +221,8 @@ export class MemStorage implements IStorage {
   private vendors: Map<number, Vendor>;
   private jobPostings: Map<number, JobPosting>;
   private teamMembers: Map<number, TeamMember>;
-  
+  private siteSettings: Map<number, SiteSetting>;
+
   userCurrentId: number;
   projectCurrentId: number;
   projectGalleryCurrentId: number;
@@ -229,9 +240,10 @@ export class MemStorage implements IStorage {
   vendorCurrentId: number;
   jobPostingCurrentId: number;
   teamMemberCurrentId: number;
+  siteSettingCurrentId: number;
 
   serviceGalleryCurrentId: number;
-  
+
   constructor() {
     this.users = new Map();
     this.projects = new Map();
@@ -253,7 +265,8 @@ export class MemStorage implements IStorage {
     this.vendors = new Map();
     this.jobPostings = new Map();
     this.teamMembers = new Map();
-    
+    this.siteSettings = new Map();
+
     this.userCurrentId = 1;
     this.projectCurrentId = 1;
     this.projectGalleryCurrentId = 1;
@@ -272,7 +285,8 @@ export class MemStorage implements IStorage {
     this.vendorCurrentId = 1;
     this.jobPostingCurrentId = 1;
     this.teamMemberCurrentId = 1;
-    
+    this.siteSettingCurrentId = 1;
+
     // Add initial data
     this.initializeData();
   }
@@ -302,11 +316,11 @@ export class MemStorage implements IStorage {
         description: "Articles about sustainable building practices and green construction"
       }
     ];
-    
+
     defaultCategories.forEach(category => {
       this.createBlogCategory(category as InsertBlogCategory);
     });
-    
+
     // Add default blog tags
     const defaultTags = [
       { name: "Green Building", slug: "green-building" },
@@ -316,11 +330,11 @@ export class MemStorage implements IStorage {
       { name: "Design", slug: "design" },
       { name: "Safety", slug: "safety" }
     ];
-    
+
     defaultTags.forEach(tag => {
       this.createBlogTag(tag as InsertBlogTag);
     });
-    
+
     // Add default services
     const defaultServices = [
       {
@@ -354,11 +368,59 @@ export class MemStorage implements IStorage {
         icon: "settings"
       }
     ];
-    
+
     defaultServices.forEach(service => {
       this.createService(service as InsertService);
     });
-    
+
+    // Add default site settings for social media
+    const defaultSocialMediaSettings = [
+      {
+        key: "social_facebook",
+        value: "https://facebook.com/arcemusa",
+        category: "social_media",
+        label: "Facebook URL",
+        description: "Facebook page URL for the footer",
+        type: "url"
+      },
+      {
+        key: "social_twitter",
+        value: "https://twitter.com/arcemusa",
+        category: "social_media",
+        label: "Twitter URL",
+        description: "Twitter profile URL for the footer",
+        type: "url"
+      },
+      {
+        key: "social_instagram",
+        value: "https://instagram.com/arcemusa",
+        category: "social_media",
+        label: "Instagram URL",
+        description: "Instagram profile URL for the footer",
+        type: "url"
+      },
+      {
+        key: "social_linkedin",
+        value: "https://linkedin.com/company/arcemusa",
+        category: "social_media",
+        label: "LinkedIn URL",
+        description: "LinkedIn company page URL for the footer",
+        type: "url"
+      },
+      {
+        key: "social_youtube",
+        value: "",
+        category: "social_media",
+        label: "YouTube URL",
+        description: "YouTube channel URL for the footer",
+        type: "url"
+      }
+    ];
+
+    defaultSocialMediaSettings.forEach(setting => {
+      this.createSiteSetting(setting as InsertSiteSetting);
+    });
+
     // Add sample projects
     const defaultProjects = [
       {
@@ -404,11 +466,11 @@ export class MemStorage implements IStorage {
         featured: true
       }
     ];
-    
+
     defaultProjects.forEach(project => {
       this.createProject(project as InsertProject);
     });
-    
+
     // Add sample blog posts
     const defaultBlogPosts = [
       {
@@ -442,11 +504,11 @@ export class MemStorage implements IStorage {
         published: true
       }
     ];
-    
+
     defaultBlogPosts.forEach(post => {
       this.createBlogPost(post as InsertBlogPost);
     });
-    
+
     // Add sample testimonials
     const defaultTestimonials = [
       {
@@ -474,7 +536,7 @@ export class MemStorage implements IStorage {
         image: "https://randomuser.me/api/portraits/men/55.jpg"
       }
     ];
-    
+
     defaultTestimonials.forEach(testimonial => {
       this.createTestimonial(testimonial as InsertTestimonial);
     });
@@ -503,7 +565,7 @@ export class MemStorage implements IStorage {
     this.users.set(id, user);
     return user;
   }
-  
+
   // Projects
   async getProjects(): Promise<Project[]> {
     return Array.from(this.projects.values())
@@ -520,11 +582,11 @@ export class MemStorage implements IStorage {
         servicesProvided: project.servicesProvided || null
       }));
   }
-  
+
   async getProject(id: number): Promise<Project | undefined> {
     const project = this.projects.get(id);
     if (!project) return undefined;
-    
+
     // Ensure new fields have default values
     return {
       ...project,
@@ -538,7 +600,7 @@ export class MemStorage implements IStorage {
       servicesProvided: project.servicesProvided || null
     };
   }
-  
+
   async getFeaturedProjects(): Promise<Project[]> {
     return Array.from(this.projects.values())
       .filter(project => project.featured === true)
@@ -555,11 +617,11 @@ export class MemStorage implements IStorage {
         servicesProvided: project.servicesProvided || null
       }));
   }
-  
+
   async createProject(project: InsertProject): Promise<Project> {
     const id = this.projectCurrentId++;
     const now = new Date();
-    
+
     // Explicitly construct the object to handle optional fields properly
     const newProject: Project = { 
       id,
@@ -569,12 +631,12 @@ export class MemStorage implements IStorage {
       image: project.image,
       featured: project.featured ?? null,
       createdAt: now,
-      
+
       // Handle optional fields with proper nulls
       overview: project.overview || null,
       challenges: project.challenges || null,
       results: project.results || null,
-      
+
       // Project specifications
       client: project.client || null,
       location: project.location || null,
@@ -582,30 +644,30 @@ export class MemStorage implements IStorage {
       completionDate: project.completionDate || null,
       servicesProvided: project.servicesProvided || null
     };
-    
+
     this.projects.set(id, newProject);
     return newProject;
   }
-  
+
   async updateProject(id: number, projectUpdate: Partial<InsertProject>): Promise<Project | undefined> {
     const project = this.projects.get(id);
     if (!project) return undefined;
-    
+
     const updatedProject: Project = { 
       ...project, 
       ...projectUpdate 
     };
-    
+
     this.projects.set(id, updatedProject);
     return updatedProject;
   }
-  
+
   async deleteProject(id: number): Promise<boolean> {
     // Also delete all gallery images for this project
     this.deleteAllProjectGalleryImages(id);
     return this.projects.delete(id);
   }
-  
+
   // Project Gallery
   async getProjectGallery(projectId: number): Promise<ProjectGallery[]> {
     return Array.from(this.projectGallery.values())
@@ -619,10 +681,10 @@ export class MemStorage implements IStorage {
 
   async addProjectGalleryImage(galleryImage: InsertProjectGallery): Promise<ProjectGallery> {
     const id = this.projectGalleryCurrentId++;
-    
+
     // Handle isFeature properly - use null coalescing to ensure we get a boolean
     const isFeature = galleryImage.isFeature ?? false;
-    
+
     const newImage: ProjectGallery = {
       ...galleryImage,
       id,
@@ -637,12 +699,12 @@ export class MemStorage implements IStorage {
   async updateProjectGalleryImage(id: number, galleryImageUpdate: Partial<InsertProjectGallery>): Promise<ProjectGallery | undefined> {
     const image = this.projectGallery.get(id);
     if (!image) return undefined;
-    
+
     const updatedImage: ProjectGallery = {
       ...image,
       ...galleryImageUpdate
     };
-    
+
     this.projectGallery.set(id, updatedImage);
     return updatedImage;
   }
@@ -658,52 +720,52 @@ export class MemStorage implements IStorage {
     });
     return true;
   }
-  
+
   async setProjectFeatureImage(projectId: number, galleryImageId: number): Promise<ProjectGallery | undefined> {
     // Get all gallery images for this project
     const galleryImages = await this.getProjectGallery(projectId);
-    
+
     // Reset all feature flags to false
     for (const image of galleryImages) {
       if (image.isFeature) {
         await this.updateProjectGalleryImage(image.id, { isFeature: false });
       }
     }
-    
+
     // Set the selected image as the feature image
     const featureImage = this.projectGallery.get(galleryImageId);
     if (!featureImage || featureImage.projectId !== projectId) {
       return undefined; // Image not found or doesn't belong to this project
     }
-    
+
     // Update the feature image
     const updatedImage = await this.updateProjectGalleryImage(galleryImageId, { isFeature: true });
-    
+
     // Also update the project's image field to use this feature image
     if (updatedImage) {
       await this.updateProject(projectId, { image: updatedImage.imageUrl });
     }
-    
+
     return updatedImage;
   }
-  
+
   // Blog Posts
   async getBlogPosts(): Promise<BlogPost[]> {
     return Array.from(this.blogPosts.values());
   }
-  
+
   async getPublishedBlogPosts(): Promise<BlogPost[]> {
     return Array.from(this.blogPosts.values()).filter(post => post.published);
   }
-  
+
   async getBlogPost(id: number): Promise<BlogPost | undefined> {
     return this.blogPosts.get(id);
   }
-  
+
   async getBlogPostBySlug(slug: string): Promise<BlogPost | undefined> {
     return Array.from(this.blogPosts.values()).find(post => post.slug === slug);
   }
-  
+
   async createBlogPost(post: InsertBlogPost): Promise<BlogPost> {
     const id = this.blogPostCurrentId++;
     const now = new Date();
@@ -716,20 +778,20 @@ export class MemStorage implements IStorage {
     this.blogPosts.set(id, newPost);
     return newPost;
   }
-  
+
   async updateBlogPost(id: number, postUpdate: Partial<InsertBlogPost>): Promise<BlogPost | undefined> {
     const post = this.blogPosts.get(id);
     if (!post) return undefined;
-    
+
     const updatedPost: BlogPost = { 
       ...post, 
       ...postUpdate 
     };
-    
+
     this.blogPosts.set(id, updatedPost);
     return updatedPost;
   }
-  
+
   async deleteBlogPost(id: number): Promise<boolean> {
     // Also clean up any categories, tags, and gallery images references
     this.blogPostCategories.delete(id);
@@ -737,7 +799,7 @@ export class MemStorage implements IStorage {
     this.deleteAllBlogGalleryImages(id);
     return this.blogPosts.delete(id);
   }
-  
+
   // Blog Gallery
   async getBlogGallery(postId: number): Promise<BlogGallery[]> {
     return Array.from(this.blogGallery.values())
@@ -752,7 +814,7 @@ export class MemStorage implements IStorage {
   async addBlogGalleryImage(galleryImage: InsertBlogGallery): Promise<BlogGallery> {
     const id = this.blogGalleryCurrentId++;
     const now = new Date();
-    
+
     const newImage: BlogGallery = {
       id,
       postId: galleryImage.postId,
@@ -761,7 +823,7 @@ export class MemStorage implements IStorage {
       order: galleryImage.order || 0,
       createdAt: now
     };
-    
+
     this.blogGallery.set(id, newImage);
     return newImage;
   }
@@ -769,12 +831,12 @@ export class MemStorage implements IStorage {
   async updateBlogGalleryImage(id: number, galleryImageUpdate: Partial<InsertBlogGallery>): Promise<BlogGallery | undefined> {
     const image = this.blogGallery.get(id);
     if (!image) return undefined;
-    
+
     const updatedImage: BlogGallery = {
       ...image,
       ...galleryImageUpdate
     };
-    
+
     this.blogGallery.set(id, updatedImage);
     return updatedImage;
   }
@@ -785,31 +847,31 @@ export class MemStorage implements IStorage {
 
   async deleteAllBlogGalleryImages(postId: number): Promise<boolean> {
     let success = true;
-    
+
     // Find all gallery images for this post
     const galleryImagesToDelete = Array.from(this.blogGallery.values())
       .filter(image => image.postId === postId)
       .map(image => image.id);
-    
+
     // Delete each gallery image
     galleryImagesToDelete.forEach(id => {
       if (!this.blogGallery.delete(id)) {
         success = false;
       }
     });
-    
+
     return success;
   }
-  
+
   // Blog Categories
   async getBlogCategories(): Promise<BlogCategory[]> {
     return Array.from(this.blogCategories.values());
   }
-  
+
   async getBlogCategory(id: number): Promise<BlogCategory | undefined> {
     return this.blogCategories.get(id);
   }
-  
+
   async createBlogCategory(category: InsertBlogCategory): Promise<BlogCategory> {
     const id = this.blogCategoryCurrentId++;
     const newCategory: BlogCategory = { 
@@ -820,16 +882,16 @@ export class MemStorage implements IStorage {
     this.blogCategories.set(id, newCategory);
     return newCategory;
   }
-  
+
   // Blog Tags
   async getBlogTags(): Promise<BlogTag[]> {
     return Array.from(this.blogTags.values());
   }
-  
+
   async getBlogTag(id: number): Promise<BlogTag | undefined> {
     return this.blogTags.get(id);
   }
-  
+
   async createBlogTag(tag: InsertBlogTag): Promise<BlogTag> {
     const id = this.blogTagCurrentId++;
     const newTag: BlogTag = { 
@@ -839,68 +901,68 @@ export class MemStorage implements IStorage {
     this.blogTags.set(id, newTag);
     return newTag;
   }
-  
+
   // Blog Post Categories
   async getBlogPostCategories(postId: number): Promise<BlogCategory[]> {
     const categoryIds = this.blogPostCategories.get(postId);
     if (!categoryIds || categoryIds.size === 0) return [];
-    
+
     return Array.from(categoryIds).map(categoryId => 
       this.blogCategories.get(categoryId)
     ).filter(Boolean) as BlogCategory[];
   }
-  
+
   async linkBlogPostCategories(postId: number, categoryIds: number[]): Promise<void> {
     const categorySet = new Set(categoryIds);
     this.blogPostCategories.set(postId, categorySet);
   }
-  
+
   async updateBlogPostCategories(postId: number, categoryIds: number[]): Promise<void> {
     // Simply replace the existing categories
     await this.linkBlogPostCategories(postId, categoryIds);
   }
-  
+
   // Blog Post Tags
   async getBlogPostTags(postId: number): Promise<BlogTag[]> {
     const tagIds = this.blogPostTags.get(postId);
     if (!tagIds || tagIds.size === 0) return [];
-    
+
     return Array.from(tagIds).map(tagId => 
       this.blogTags.get(tagId)
     ).filter(Boolean) as BlogTag[];
   }
-  
+
   async linkBlogPostTags(postId: number, tagIds: number[]): Promise<void> {
     const tagSet = new Set(tagIds);
     this.blogPostTags.set(postId, tagSet);
   }
-  
+
   async updateBlogPostTags(postId: number, tagIds: number[]): Promise<void> {
     // Simply replace the existing tags
     await this.linkBlogPostTags(postId, tagIds);
   }
-  
+
   // Testimonials
   async getTestimonials(): Promise<Testimonial[]> {
     return Array.from(this.testimonials.values());
   }
-  
+
   // Get only approved testimonials (for public display)
   async getApprovedTestimonials(): Promise<Testimonial[]> {
     return Array.from(this.testimonials.values())
       .filter(testimonial => testimonial.approved);
   }
-  
+
   // Get pending testimonials (for admin review)
   async getPendingTestimonials(): Promise<Testimonial[]> {
     return Array.from(this.testimonials.values())
       .filter(testimonial => !testimonial.approved);
   }
-  
+
   async getTestimonial(id: number): Promise<Testimonial | undefined> {
     return this.testimonials.get(id);
   }
-  
+
   async createTestimonial(testimonial: InsertTestimonial): Promise<Testimonial> {
     const id = this.testimonialCurrentId++;
     const newTestimonial: Testimonial = { 
@@ -915,11 +977,11 @@ export class MemStorage implements IStorage {
     this.testimonials.set(id, newTestimonial);
     return newTestimonial;
   }
-  
+
   async updateTestimonial(id: number, updates: Partial<InsertTestimonial>): Promise<Testimonial | undefined> {
     const testimonial = this.testimonials.get(id);
     if (!testimonial) return undefined;
-    
+
     const updatedTestimonial: Testimonial = {
       ...testimonial,
       ...updates,
@@ -927,50 +989,50 @@ export class MemStorage implements IStorage {
       company: updates.company ?? testimonial.company,
       email: updates.email ?? testimonial.email
     };
-    
+
     this.testimonials.set(id, updatedTestimonial);
     return updatedTestimonial;
   }
-  
+
   async approveTestimonial(id: number): Promise<Testimonial | undefined> {
     const testimonial = this.testimonials.get(id);
     if (!testimonial) return undefined;
-    
+
     const approvedTestimonial: Testimonial = {
       ...testimonial,
       approved: true
     };
-    
+
     this.testimonials.set(id, approvedTestimonial);
     return approvedTestimonial;
   }
-  
+
   async revokeTestimonialApproval(id: number): Promise<Testimonial | undefined> {
     const testimonial = this.testimonials.get(id);
     if (!testimonial) return undefined;
-    
+
     const unapprovedTestimonial: Testimonial = {
       ...testimonial,
       approved: false
     };
-    
+
     this.testimonials.set(id, unapprovedTestimonial);
     return unapprovedTestimonial;
   }
-  
+
   async deleteTestimonial(id: number): Promise<boolean> {
     return this.testimonials.delete(id);
   }
-  
+
   // Services
   async getServices(): Promise<Service[]> {
     return Array.from(this.services.values());
   }
-  
+
   async getService(id: number): Promise<Service | undefined> {
     return this.services.get(id);
   }
-  
+
   async createService(service: InsertService): Promise<Service> {
     const id = this.serviceCurrentId++;
     const newService: Service = { 
@@ -981,27 +1043,27 @@ export class MemStorage implements IStorage {
     this.services.set(id, newService);
     return newService;
   }
-  
+
   async updateService(id: number, serviceUpdate: Partial<InsertService>): Promise<Service | undefined> {
     const service = this.services.get(id);
     if (!service) return undefined;
-    
+
     const updatedService: Service = { 
       ...service, 
       ...serviceUpdate,
       features: serviceUpdate.features !== undefined ? serviceUpdate.features : service.features
     };
-    
+
     this.services.set(id, updatedService);
     return updatedService;
   }
-  
+
   async deleteService(id: number): Promise<boolean> {
     // Also delete all gallery images for this service
     this.deleteAllServiceGalleryImages(id);
     return this.services.delete(id);
   }
-  
+
   // Service Gallery
   async getServiceGallery(serviceId: number): Promise<ServiceGallery[]> {
     return Array.from(this.serviceGallery.values())
@@ -1016,7 +1078,7 @@ export class MemStorage implements IStorage {
   async addServiceGalleryImage(galleryImage: InsertServiceGallery): Promise<ServiceGallery> {
     const id = this.serviceGalleryCurrentId++;
     const now = new Date();
-    
+
     const newImage: ServiceGallery = {
       ...galleryImage,
       id,
@@ -1024,7 +1086,7 @@ export class MemStorage implements IStorage {
       alt: galleryImage.alt || null,
       createdAt: now
     };
-    
+
     this.serviceGallery.set(id, newImage);
     return newImage;
   }
@@ -1032,14 +1094,14 @@ export class MemStorage implements IStorage {
   async updateServiceGalleryImage(id: number, galleryImageUpdate: Partial<InsertServiceGallery>): Promise<ServiceGallery | undefined> {
     const image = this.serviceGallery.get(id);
     if (!image) return undefined;
-    
+
     const updatedImage: ServiceGallery = {
       ...image,
       ...galleryImageUpdate,
       alt: galleryImageUpdate.alt !== undefined ? galleryImageUpdate.alt : image.alt,
       order: galleryImageUpdate.order !== undefined ? galleryImageUpdate.order : image.order
     };
-    
+
     this.serviceGallery.set(id, updatedImage);
     return updatedImage;
   }
@@ -1052,20 +1114,20 @@ export class MemStorage implements IStorage {
     const imagesToDelete = Array.from(this.serviceGallery.values())
       .filter(image => image.serviceId === serviceId)
       .map(image => image.id);
-      
+
     imagesToDelete.forEach(id => this.serviceGallery.delete(id));
     return true;
   }
-  
+
   // Messages
   async getMessages(): Promise<Message[]> {
     return Array.from(this.messages.values());
   }
-  
+
   async getMessage(id: number): Promise<Message | undefined> {
     return this.messages.get(id);
   }
-  
+
   async createMessage(message: InsertMessage): Promise<Message> {
     const id = this.messageCurrentId++;
     const now = new Date();
@@ -1080,20 +1142,20 @@ export class MemStorage implements IStorage {
     this.messages.set(id, newMessage);
     return newMessage;
   }
-  
+
   async markMessageAsRead(id: number): Promise<Message | undefined> {
     const message = this.messages.get(id);
     if (!message) return undefined;
-    
+
     const updatedMessage: Message = { 
       ...message, 
       read: true 
     };
-    
+
     this.messages.set(id, updatedMessage);
     return updatedMessage;
   }
-  
+
   async deleteMessage(id: number): Promise<boolean> {
     return this.messages.delete(id);
   }
@@ -1237,18 +1299,18 @@ export class MemStorage implements IStorage {
     await this.deleteAllQuoteRequestAttachments(id);
     return this.quoteRequests.delete(id);
   }
-  
+
   // Quote Request Attachments
   async getQuoteRequestAttachments(quoteRequestId: number): Promise<QuoteRequestAttachment[]> {
     return Array.from(this.quoteRequestAttachments.values())
       .filter(attachment => attachment.quoteRequestId === quoteRequestId);
   }
-  
+
   async createQuoteRequestAttachment(attachment: InsertQuoteRequestAttachment): Promise<QuoteRequestAttachment> {
     // Generate an ID for the new attachment
     const id = this.projectGalleryCurrentId++; // Reuse the project gallery counter for now
     const now = new Date();
-    
+
     const newAttachment: QuoteRequestAttachment = {
       id,
       quoteRequestId: attachment.quoteRequestId,
@@ -1259,23 +1321,23 @@ export class MemStorage implements IStorage {
       fileType: attachment.fileType,
       createdAt: now
     };
-    
+
     this.quoteRequestAttachments.set(id, newAttachment);
     return newAttachment;
   }
-  
+
   async deleteQuoteRequestAttachment(id: number): Promise<boolean> {
     return this.quoteRequestAttachments.delete(id);
   }
-  
+
   async deleteAllQuoteRequestAttachments(quoteRequestId: number): Promise<boolean> {
     const attachments = Array.from(this.quoteRequestAttachments.values())
       .filter(attachment => attachment.quoteRequestId === quoteRequestId);
-    
+
     attachments.forEach(attachment => {
       this.quoteRequestAttachments.delete(attachment.id);
     });
-    
+
     return true;
   }
 
@@ -1291,7 +1353,7 @@ export class MemStorage implements IStorage {
   async createSubcontractor(subcontractor: InsertSubcontractor): Promise<Subcontractor> {
     const id = this.subcontractorCurrentId++;
     const now = new Date();
-    
+
     const newSubcontractor: Subcontractor = {
       id,
       companyName: subcontractor.companyName,
@@ -1315,7 +1377,7 @@ export class MemStorage implements IStorage {
       notes: null,
       createdAt: now
     };
-    
+
     this.subcontractors.set(id, newSubcontractor);
     return newSubcontractor;
   }
@@ -1323,7 +1385,7 @@ export class MemStorage implements IStorage {
   async updateSubcontractor(id: number, updates: Partial<InsertSubcontractor>): Promise<Subcontractor | undefined> {
     const subcontractor = this.subcontractors.get(id);
     if (!subcontractor) return undefined;
-    
+
     const updatedSubcontractor: Subcontractor = {
       ...subcontractor,
       ...updates,
@@ -1334,7 +1396,7 @@ export class MemStorage implements IStorage {
       references: updates.references || subcontractor.references,
       howDidYouHear: updates.howDidYouHear || subcontractor.howDidYouHear
     };
-    
+
     this.subcontractors.set(id, updatedSubcontractor);
     return updatedSubcontractor;
   }
@@ -1342,12 +1404,12 @@ export class MemStorage implements IStorage {
   async updateSubcontractorStatus(id: number, status: string): Promise<Subcontractor | undefined> {
     const subcontractor = this.subcontractors.get(id);
     if (!subcontractor) return undefined;
-    
+
     const updatedSubcontractor: Subcontractor = {
       ...subcontractor,
       status
     };
-    
+
     this.subcontractors.set(id, updatedSubcontractor);
     return updatedSubcontractor;
   }
@@ -1355,12 +1417,12 @@ export class MemStorage implements IStorage {
   async updateSubcontractorNotes(id: number, notes: string): Promise<Subcontractor | undefined> {
     const subcontractor = this.subcontractors.get(id);
     if (!subcontractor) return undefined;
-    
+
     const updatedSubcontractor: Subcontractor = {
       ...subcontractor,
       notes
     };
-    
+
     this.subcontractors.set(id, updatedSubcontractor);
     return updatedSubcontractor;
   }
@@ -1381,7 +1443,7 @@ export class MemStorage implements IStorage {
   async createVendor(vendor: InsertVendor): Promise<Vendor> {
     const id = this.vendorCurrentId++;
     const now = new Date();
-    
+
     const newVendor: Vendor = {
       id,
       companyName: vendor.companyName,
@@ -1402,7 +1464,7 @@ export class MemStorage implements IStorage {
       notes: null,
       createdAt: now
     };
-    
+
     this.vendors.set(id, newVendor);
     return newVendor;
   }
@@ -1410,7 +1472,7 @@ export class MemStorage implements IStorage {
   async updateVendor(id: number, updates: Partial<InsertVendor>): Promise<Vendor | undefined> {
     const vendor = this.vendors.get(id);
     if (!vendor) return undefined;
-    
+
     const updatedVendor: Vendor = {
       ...vendor,
       ...updates,
@@ -1420,7 +1482,7 @@ export class MemStorage implements IStorage {
       references: updates.references || vendor.references,
       howDidYouHear: updates.howDidYouHear || vendor.howDidYouHear
     };
-    
+
     this.vendors.set(id, updatedVendor);
     return updatedVendor;
   }
@@ -1428,12 +1490,12 @@ export class MemStorage implements IStorage {
   async updateVendorStatus(id: number, status: string): Promise<Vendor | undefined> {
     const vendor = this.vendors.get(id);
     if (!vendor) return undefined;
-    
+
     const updatedVendor: Vendor = {
       ...vendor,
       status
     };
-    
+
     this.vendors.set(id, updatedVendor);
     return updatedVendor;
   }
@@ -1441,12 +1503,12 @@ export class MemStorage implements IStorage {
   async updateVendorNotes(id: number, notes: string): Promise<Vendor | undefined> {
     const vendor = this.vendors.get(id);
     if (!vendor) return undefined;
-    
+
     const updatedVendor: Vendor = {
       ...vendor,
       notes
     };
-    
+
     this.vendors.set(id, updatedVendor);
     return updatedVendor;
   }
@@ -1454,30 +1516,30 @@ export class MemStorage implements IStorage {
   async deleteVendor(id: number): Promise<boolean> {
     return this.vendors.delete(id);
   }
-  
+
   // Job Posting methods
   async getJobPostings(): Promise<JobPosting[]> {
     return Array.from(this.jobPostings.values());
   }
-  
+
   async getActiveJobPostings(): Promise<JobPosting[]> {
     return Array.from(this.jobPostings.values())
       .filter(job => job.active === true);
   }
-  
+
   async getFeaturedJobPostings(): Promise<JobPosting[]> {
     return Array.from(this.jobPostings.values())
       .filter(job => job.featured === true && job.active === true);
   }
-  
+
   async getJobPosting(id: number): Promise<JobPosting | undefined> {
     return this.jobPostings.get(id);
   }
-  
+
   async createJobPosting(jobPosting: InsertJobPosting): Promise<JobPosting> {
     const id = this.jobPostingCurrentId++;
     const now = new Date();
-    
+
     const newJobPosting: JobPosting = {
       id,
       title: jobPosting.title,
@@ -1495,53 +1557,53 @@ export class MemStorage implements IStorage {
       createdAt: now,
       updatedAt: now
     };
-    
+
     this.jobPostings.set(id, newJobPosting);
     return newJobPosting;
   }
-  
+
   async updateJobPosting(id: number, jobPostingUpdate: Partial<InsertJobPosting>): Promise<JobPosting | undefined> {
     const jobPosting = this.jobPostings.get(id);
     if (!jobPosting) return undefined;
-    
+
     const updatedJobPosting: JobPosting = {
       ...jobPosting,
       ...jobPostingUpdate,
       updatedAt: new Date()
     };
-    
+
     this.jobPostings.set(id, updatedJobPosting);
     return updatedJobPosting;
   }
-  
+
   async toggleJobPostingActive(id: number): Promise<JobPosting | undefined> {
     const jobPosting = this.jobPostings.get(id);
     if (!jobPosting) return undefined;
-    
+
     const updatedJobPosting: JobPosting = {
       ...jobPosting,
       active: !jobPosting.active,
       updatedAt: new Date()
     };
-    
+
     this.jobPostings.set(id, updatedJobPosting);
     return updatedJobPosting;
   }
-  
+
   async toggleJobPostingFeatured(id: number): Promise<JobPosting | undefined> {
     const jobPosting = this.jobPostings.get(id);
     if (!jobPosting) return undefined;
-    
+
     const updatedJobPosting: JobPosting = {
       ...jobPosting,
       featured: !jobPosting.featured,
       updatedAt: new Date()
     };
-    
+
     this.jobPostings.set(id, updatedJobPosting);
     return updatedJobPosting;
   }
-  
+
   async deleteJobPosting(id: number): Promise<boolean> {
     return this.jobPostings.delete(id);
   }
@@ -1573,7 +1635,7 @@ export class MemStorage implements IStorage {
   async createTeamMember(teamMember: InsertTeamMember): Promise<TeamMember> {
     const id = this.teamMemberCurrentId++;
     const now = new Date();
-    
+
     const newTeamMember: TeamMember = {
       id,
       name: teamMember.name,
@@ -1587,7 +1649,7 @@ export class MemStorage implements IStorage {
       createdAt: now,
       updatedAt: now
     };
-    
+
     this.teamMembers.set(id, newTeamMember);
     return newTeamMember;
   }
@@ -1595,13 +1657,13 @@ export class MemStorage implements IStorage {
   async updateTeamMember(id: number, teamMemberUpdate: Partial<InsertTeamMember>): Promise<TeamMember | undefined> {
     const teamMember = this.teamMembers.get(id);
     if (!teamMember) return undefined;
-    
+
     const updatedTeamMember: TeamMember = {
       ...teamMember,
       ...teamMemberUpdate,
       updatedAt: new Date()
     };
-    
+
     this.teamMembers.set(id, updatedTeamMember);
     return updatedTeamMember;
   }
@@ -1609,13 +1671,13 @@ export class MemStorage implements IStorage {
   async toggleTeamMemberActive(id: number): Promise<TeamMember | undefined> {
     const teamMember = this.teamMembers.get(id);
     if (!teamMember) return undefined;
-    
+
     const updatedTeamMember: TeamMember = {
       ...teamMember,
       active: !teamMember.active,
       updatedAt: new Date()
     };
-    
+
     this.teamMembers.set(id, updatedTeamMember);
     return updatedTeamMember;
   }
@@ -1623,19 +1685,87 @@ export class MemStorage implements IStorage {
   async updateTeamMemberOrder(id: number, order: number): Promise<TeamMember | undefined> {
     const teamMember = this.teamMembers.get(id);
     if (!teamMember) return undefined;
-    
+
     const updatedTeamMember: TeamMember = {
       ...teamMember,
       order,
       updatedAt: new Date()
     };
-    
+
     this.teamMembers.set(id, updatedTeamMember);
     return updatedTeamMember;
   }
 
   async deleteTeamMember(id: number): Promise<boolean> {
     return this.teamMembers.delete(id);
+  }
+
+  // Site Settings
+  async getSiteSettings(): Promise<SiteSetting[]> {
+    return Array.from(this.siteSettings.values());
+  }
+
+  async getSiteSettingsByCategory(category: string): Promise<SiteSetting[]> {
+    return Array.from(this.siteSettings.values()).filter(
+      (setting) => setting.category === category
+    );
+  }
+
+  async getSiteSettingByKey(key: string): Promise<SiteSetting | undefined> {
+    return Array.from(this.siteSettings.values()).find(
+      (setting) => setting.key === key
+    );
+  }
+
+  async createSiteSetting(insertSetting: InsertSiteSetting): Promise<SiteSetting> {
+    const id = this.siteSettingCurrentId++;
+    const now = new Date();
+
+    const setting: SiteSetting = {
+      id,
+      key: insertSetting.key,
+      value: insertSetting.value,
+      category: insertSetting.category || "general",
+      label: insertSetting.label,
+      description: insertSetting.description || null,
+      type: insertSetting.type || "text",
+      updatedAt: now
+    };
+
+    this.siteSettings.set(id, setting);
+    return setting;
+  }
+
+  async updateSiteSetting(id: number, settingUpdate: Partial<InsertSiteSetting>): Promise<SiteSetting | undefined> {
+    const existingSetting = this.siteSettings.get(id);
+    if (!existingSetting) return undefined;
+
+    const updatedSetting: SiteSetting = {
+      ...existingSetting,
+      ...settingUpdate,
+      updatedAt: new Date()
+    };
+
+    this.siteSettings.set(id, updatedSetting);
+    return updatedSetting;
+  }
+
+  async updateSiteSettingByKey(key: string, value: string): Promise<SiteSetting | undefined> {
+    const existingSetting = await this.getSiteSettingByKey(key);
+    if (!existingSetting) return undefined;
+
+    const updatedSetting: SiteSetting = {
+      ...existingSetting,
+      value,
+      updatedAt: new Date()
+    };
+
+    this.siteSettings.set(existingSetting.id, updatedSetting);
+    return updatedSetting;
+  }
+
+  async deleteSiteSetting(id: number): Promise<boolean> {
+    return this.siteSettings.delete(id);
   }
 }
 

@@ -1,17 +1,29 @@
 import { Link } from "wouter";
 import {
-  Facebook,
-  Github,
-  Instagram,
-  Linkedin,
-  MapPin,
-  Phone,
-  Mail,
+  FacebookIcon,
+  GithubIcon,
+  InstagramIcon,
+  LinkedinIcon,
+  MapPinIcon,
+  PhoneIcon,
+  MailIcon,
+  TwitterIcon,
+  YoutubeIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import NewsletterSubscription from "@/components/common/NewsletterSubscription";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 const Footer = () => {
+  const { isLoading, getSettingValue } = useSiteSettings();
+
+  // Get social media URLs with empty string fallback
+  const facebookUrl = getSettingValue("social_facebook");
+  const twitterUrl = getSettingValue("social_twitter");
+  const instagramUrl = getSettingValue("social_instagram");
+  const linkedinUrl = getSettingValue("social_linkedin");
+  const youtubeUrl = getSettingValue("social_youtube");
+
   return (
     <footer className="bg-black text-white pt-20 pb-8">
       <div className="container mx-auto px-4 md:px-8">
@@ -28,53 +40,80 @@ const Footer = () => {
               innovative solutions for over a decade.
             </p>
             <div className="flex space-x-4 mb-6">
-              <a
-                href="#"
-                className="text-gray-400 hover:text-[#1E90DB] transition-colors"
-                aria-label="Facebook"
-              >
-                <Facebook className="w-5 h-5" />
-              </a>
-              <a
-                href="#"
-                className="text-gray-400 hover:text-[#1E90DB] transition-colors"
-                aria-label="GitHub"
-              >
-                <Github className="w-5 h-5" />
-              </a>
-              <a
-                href="#"
-                className="text-gray-400 hover:text-[#1E90DB] transition-colors"
-                aria-label="Instagram"
-              >
-                <Instagram className="w-5 h-5" />
-              </a>
-              <a
-                href="#"
-                className="text-gray-400 hover:text-[#1E90DB] transition-colors"
-                aria-label="LinkedIn"
-              >
-                <Linkedin className="w-5 h-5" />
-              </a>
+              {facebookUrl && (
+                <a
+                  href={facebookUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-400 hover:text-[#1E90DB] transition-colors"
+                  aria-label="Facebook"
+                >
+                  <FacebookIcon className="w-5 h-5" />
+                </a>
+              )}
+              {twitterUrl && (
+                <a
+                  href={twitterUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-400 hover:text-[#1E90DB] transition-colors"
+                  aria-label="Twitter"
+                >
+                  <TwitterIcon className="w-5 h-5" />
+                </a>
+              )}
+              {instagramUrl && (
+                <a
+                  href={instagramUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-400 hover:text-[#1E90DB] transition-colors"
+                  aria-label="Instagram"
+                >
+                  <InstagramIcon className="w-5 h-5" />
+                </a>
+              )}
+              {linkedinUrl && (
+                <a
+                  href={linkedinUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-400 hover:text-[#1E90DB] transition-colors"
+                  aria-label="LinkedIn"
+                >
+                  <LinkedinIcon className="w-5 h-5" />
+                </a>
+              )}
+              {youtubeUrl && (
+                <a
+                  href={youtubeUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-400 hover:text-[#1E90DB] transition-colors"
+                  aria-label="YouTube"
+                >
+                  <YoutubeIcon className="w-5 h-5" />
+                </a>
+              )}
             </div>
 
             {/* Contact Info with Icons */}
             <div className="space-y-3 text-gray-400">
               <div className="flex items-center space-x-3">
-                <MapPin className="w-4 h-4 text-[#1E90DB]" />
+                <MapPinIcon className="w-4 h-4 text-[#1E90DB]" />
                 <span className="text-sm">
                   215 Birch Hill Dr, Sugar Land, TX 77479
                 </span>
               </div>
               <div className="flex items-start space-x-3">
-                <Phone className="w-4 h-4 text-[#1E90DB] mt-1" />
+                <PhoneIcon className="w-4 h-4 text-[#1E90DB] mt-1" />
                 <div>
                   <div className="text-sm">Cell: (713) 624-0083</div>
                   <div className="text-sm">Office: (713) 624-0313</div>
                 </div>
               </div>
               <div className="flex items-start space-x-3">
-                <Mail className="w-4 h-4 text-[#1E90DB] mt-1" />
+                <MailIcon className="w-4 h-4 text-[#1E90DB] mt-1" />
                 <div>
                   <div className="text-sm">aj@arcemusa.com</div>
                   <div className="text-sm">admin@arcemusa.com</div>

@@ -1,4 +1,14 @@
-import { pgTable, text, serial, integer, boolean, timestamp, primaryKey, foreignKey, jsonb } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  serial,
+  integer,
+  boolean,
+  timestamp,
+  primaryKey,
+  foreignKey,
+  jsonb,
+} from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { relations } from "drizzle-orm";
 import { z } from "zod";
@@ -26,12 +36,12 @@ export const projects = pgTable("projects", {
   image: text("image").notNull(),
   featured: boolean("featured"),
   createdAt: timestamp("created_at").defaultNow(),
-  
+
   // Additional details for individual project pages
   overview: text("overview"),
   challenges: text("challenges"),
   results: text("results"),
-  
+
   // Project specifications
   client: text("client"),
   location: text("location"),
@@ -42,31 +52,37 @@ export const projects = pgTable("projects", {
 
 export const projectGallery = pgTable("project_gallery", {
   id: serial("id").primaryKey(),
-  projectId: integer("project_id").notNull().references(() => projects.id, { onDelete: 'cascade' }),
+  projectId: integer("project_id")
+    .notNull()
+    .references(() => projects.id, { onDelete: "cascade" }),
   imageUrl: text("image_url").notNull(),
   caption: text("caption"),
   displayOrder: integer("display_order").default(0),
   isFeature: boolean("is_feature").default(false),
 });
 
-export const insertProjectGallerySchema = createInsertSchema(projectGallery).omit({
-  id: true
+export const insertProjectGallerySchema = createInsertSchema(
+  projectGallery,
+).omit({
+  id: true,
 });
 
 export const insertProjectSchema = createInsertSchema(projects).omit({
   id: true,
-  createdAt: true
+  createdAt: true,
 });
 
 export const extendedInsertProjectSchema = insertProjectSchema.extend({
-  galleryImages: z.array(
-    z.object({
-      imageUrl: z.string().url(),
-      caption: z.string().optional(),
-      displayOrder: z.number().optional(),
-      isFeature: z.boolean().optional(),
-    })
-  ).optional(),
+  galleryImages: z
+    .array(
+      z.object({
+        imageUrl: z.string().url(),
+        caption: z.string().optional(),
+        displayOrder: z.number().optional(),
+        isFeature: z.boolean().optional(),
+      }),
+    )
+    .optional(),
 });
 
 export const projectsRelations = relations(projects, ({ many }) => ({
@@ -76,7 +92,7 @@ export const projectsRelations = relations(projects, ({ many }) => ({
 export const projectGalleryRelations = relations(projectGallery, ({ one }) => ({
   project: one(projects, {
     fields: [projectGallery.projectId],
-    references: [projects.id]
+    references: [projects.id],
   }),
 }));
 
@@ -88,10 +104,12 @@ export const blogCategories = pgTable("blog_categories", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const insertBlogCategorySchema = createInsertSchema(blogCategories).omit({
-  id: true,
-  createdAt: true
-});
+export const insertBlogCategorySchema = createInsertSchema(blogCategories).omit(
+  {
+    id: true,
+    createdAt: true,
+  },
+);
 
 export const blogTags = pgTable("blog_tags", {
   id: serial("id").primaryKey(),
@@ -102,7 +120,7 @@ export const blogTags = pgTable("blog_tags", {
 
 export const insertBlogTagSchema = createInsertSchema(blogTags).omit({
   id: true,
-  createdAt: true
+  createdAt: true,
 });
 
 export const blogPosts = pgTable("blog_posts", {
@@ -118,36 +136,54 @@ export const blogPosts = pgTable("blog_posts", {
   category: text("category").notNull().default(""), // Make it not null but with a default empty string
 });
 
-export const blogPostCategories = pgTable("blog_post_categories", {
-  postId: integer("post_id").notNull().references(() => blogPosts.id, { onDelete: 'cascade' }),
-  categoryId: integer("category_id").notNull().references(() => blogCategories.id, { onDelete: 'cascade' }),
-}, table => ({
-  pk: primaryKey(table.postId, table.categoryId)
-}));
+export const blogPostCategories = pgTable(
+  "blog_post_categories",
+  {
+    postId: integer("post_id")
+      .notNull()
+      .references(() => blogPosts.id, { onDelete: "cascade" }),
+    categoryId: integer("category_id")
+      .notNull()
+      .references(() => blogCategories.id, { onDelete: "cascade" }),
+  },
+  (table) => ({
+    pk: primaryKey(table.postId, table.categoryId),
+  }),
+);
 
-export const blogPostTags = pgTable("blog_post_tags", {
-  postId: integer("post_id").notNull().references(() => blogPosts.id, { onDelete: 'cascade' }),
-  tagId: integer("tag_id").notNull().references(() => blogTags.id, { onDelete: 'cascade' }),
-}, table => ({
-  pk: primaryKey(table.postId, table.tagId)
-}));
+export const blogPostTags = pgTable(
+  "blog_post_tags",
+  {
+    postId: integer("post_id")
+      .notNull()
+      .references(() => blogPosts.id, { onDelete: "cascade" }),
+    tagId: integer("tag_id")
+      .notNull()
+      .references(() => blogTags.id, { onDelete: "cascade" }),
+  },
+  (table) => ({
+    pk: primaryKey(table.postId, table.tagId),
+  }),
+);
 
 export const blogGallery = pgTable("blog_gallery", {
   id: serial("id").primaryKey(),
-  postId: integer("post_id").notNull().references(() => blogPosts.id, { onDelete: 'cascade' }),
+  postId: integer("post_id")
+    .notNull()
+    .references(() => blogPosts.id, { onDelete: "cascade" }),
   imageUrl: text("image_url").notNull(),
   caption: text("caption"),
   order: integer("order").default(0),
 });
 
 export const insertBlogGallerySchema = createInsertSchema(blogGallery).omit({
-  id: true
+  id: true,
 });
 
 export const blogGalleryRelations = relations(blogGallery, ({ one }) => ({
   post: one(blogPosts, {
     fields: [blogGallery.postId],
-    references: [blogPosts.id]
+    references: [blogPosts.id],
   }),
 }));
 
@@ -157,51 +193,59 @@ export const blogPostsRelations = relations(blogPosts, ({ many }) => ({
   gallery: many(blogGallery),
 }));
 
-export const blogCategoriesRelations = relations(blogCategories, ({ many }) => ({
-  posts: many(blogPostCategories),
-}));
+export const blogCategoriesRelations = relations(
+  blogCategories,
+  ({ many }) => ({
+    posts: many(blogPostCategories),
+  }),
+);
 
 export const blogTagsRelations = relations(blogTags, ({ many }) => ({
   posts: many(blogPostTags),
 }));
 
-export const blogPostCategoriesRelations = relations(blogPostCategories, ({ one }) => ({
-  post: one(blogPosts, {
-    fields: [blogPostCategories.postId],
-    references: [blogPosts.id]
+export const blogPostCategoriesRelations = relations(
+  blogPostCategories,
+  ({ one }) => ({
+    post: one(blogPosts, {
+      fields: [blogPostCategories.postId],
+      references: [blogPosts.id],
+    }),
+    category: one(blogCategories, {
+      fields: [blogPostCategories.categoryId],
+      references: [blogCategories.id],
+    }),
   }),
-  category: one(blogCategories, {
-    fields: [blogPostCategories.categoryId],
-    references: [blogCategories.id]
-  })
-}));
+);
 
 export const blogPostTagsRelations = relations(blogPostTags, ({ one }) => ({
   post: one(blogPosts, {
     fields: [blogPostTags.postId],
-    references: [blogPosts.id]
+    references: [blogPosts.id],
   }),
   tag: one(blogTags, {
     fields: [blogPostTags.tagId],
-    references: [blogTags.id]
-  })
+    references: [blogTags.id],
+  }),
 }));
 
 export const insertBlogPostSchema = createInsertSchema(blogPosts).omit({
   id: true,
-  createdAt: true
+  createdAt: true,
 });
 
 export const extendedInsertBlogPostSchema = insertBlogPostSchema.extend({
   categoryIds: z.array(z.number()).optional(),
   tagIds: z.array(z.number()).optional(),
-  galleryImages: z.array(
-    z.object({
-      imageUrl: z.string().url(),
-      caption: z.string().optional(),
-      order: z.number().optional(),
-    })
-  ).optional(),
+  galleryImages: z
+    .array(
+      z.object({
+        imageUrl: z.string().url(),
+        caption: z.string().optional(),
+        order: z.number().optional(),
+      }),
+    )
+    .optional(),
 });
 
 export const testimonials = pgTable("testimonials", {
@@ -219,11 +263,12 @@ export const testimonials = pgTable("testimonials", {
 
 export const insertTestimonialSchema = createInsertSchema(testimonials).omit({
   id: true,
-  createdAt: true
+  createdAt: true,
 });
 
-export const publicTestimonialSchema = insertTestimonialSchema
-  .omit({ approved: true });
+export const publicTestimonialSchema = insertTestimonialSchema.omit({
+  approved: true,
+});
 
 export const services = pgTable("services", {
   id: serial("id").primaryKey(),
@@ -235,7 +280,9 @@ export const services = pgTable("services", {
 
 export const serviceGallery = pgTable("service_gallery", {
   id: serial("id").primaryKey(),
-  serviceId: integer("service_id").notNull().references(() => services.id, { onDelete: 'cascade' }),
+  serviceId: integer("service_id")
+    .notNull()
+    .references(() => services.id, { onDelete: "cascade" }),
   imageUrl: text("image_url").notNull(),
   caption: text("caption"),
   order: integer("order").default(0),
@@ -244,23 +291,27 @@ export const serviceGallery = pgTable("service_gallery", {
 });
 
 export const insertServiceSchema = createInsertSchema(services).omit({
-  id: true
+  id: true,
 });
 
-export const insertServiceGallerySchema = createInsertSchema(serviceGallery).omit({
+export const insertServiceGallerySchema = createInsertSchema(
+  serviceGallery,
+).omit({
   id: true,
-  createdAt: true
+  createdAt: true,
 });
 
 export const extendedInsertServiceSchema = insertServiceSchema.extend({
-  galleryImages: z.array(
-    z.object({
-      imageUrl: z.string().url(),
-      caption: z.string().optional(),
-      order: z.number().optional(),
-      alt: z.string().optional(),
-    })
-  ).optional(),
+  galleryImages: z
+    .array(
+      z.object({
+        imageUrl: z.string().url(),
+        caption: z.string().optional(),
+        order: z.number().optional(),
+        alt: z.string().optional(),
+      }),
+    )
+    .optional(),
 });
 
 export const servicesRelations = relations(services, ({ many }) => ({
@@ -270,7 +321,7 @@ export const servicesRelations = relations(services, ({ many }) => ({
 export const serviceGalleryRelations = relations(serviceGallery, ({ one }) => ({
   service: one(services, {
     fields: [serviceGallery.serviceId],
-    references: [services.id]
+    references: [services.id],
   }),
 }));
 
@@ -288,7 +339,7 @@ export const messages = pgTable("messages", {
 export const insertMessageSchema = createInsertSchema(messages).omit({
   id: true,
   read: true,
-  createdAt: true
+  createdAt: true,
 });
 
 export const newsletterSubscribers = pgTable("newsletter_subscribers", {
@@ -300,14 +351,18 @@ export const newsletterSubscribers = pgTable("newsletter_subscribers", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const insertNewsletterSubscriberSchema = createInsertSchema(newsletterSubscribers).omit({
+export const insertNewsletterSubscriberSchema = createInsertSchema(
+  newsletterSubscribers,
+).omit({
   id: true,
   subscribed: true,
-  createdAt: true
+  createdAt: true,
 });
 
 export type NewsletterSubscriber = typeof newsletterSubscribers.$inferSelect;
-export type InsertNewsletterSubscriber = z.infer<typeof insertNewsletterSubscriberSchema>;
+export type InsertNewsletterSubscriber = z.infer<
+  typeof insertNewsletterSubscriberSchema
+>;
 
 export const quoteRequests = pgTable("quote_requests", {
   id: serial("id").primaryKey(),
@@ -329,7 +384,7 @@ export const insertQuoteRequestSchema = createInsertSchema(quoteRequests).omit({
   id: true,
   status: true,
   reviewed: true,
-  createdAt: true
+  createdAt: true,
 });
 
 // Schema for file attachments in quote requests
@@ -338,13 +393,14 @@ export const fileAttachmentSchema = z.object({
   fileUrl: z.string().url(),
   fileKey: z.string(),
   fileSize: z.number(),
-  fileType: z.string()
+  fileType: z.string(),
 });
 
 // Extended schema that includes attachments for the frontend
-export const quoteRequestWithAttachmentsSchema = insertQuoteRequestSchema.extend({
-  attachments: z.array(fileAttachmentSchema).optional()
-});
+export const quoteRequestWithAttachmentsSchema =
+  insertQuoteRequestSchema.extend({
+    attachments: z.array(fileAttachmentSchema).optional(),
+  });
 
 export type QuoteRequest = typeof quoteRequests.$inferSelect;
 export type InsertQuoteRequest = z.infer<typeof insertQuoteRequestSchema>;
@@ -352,7 +408,9 @@ export type InsertQuoteRequest = z.infer<typeof insertQuoteRequestSchema>;
 // Quote request attachments table
 export const quoteRequestAttachments = pgTable("quote_request_attachments", {
   id: serial("id").primaryKey(),
-  quoteRequestId: integer("quote_request_id").notNull().references(() => quoteRequests.id, { onDelete: 'cascade' }),
+  quoteRequestId: integer("quote_request_id")
+    .notNull()
+    .references(() => quoteRequests.id, { onDelete: "cascade" }),
   fileName: text("file_name").notNull(),
   fileUrl: text("file_url").notNull(),
   fileKey: text("file_key").notNull(),
@@ -361,25 +419,33 @@ export const quoteRequestAttachments = pgTable("quote_request_attachments", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const insertQuoteRequestAttachmentSchema = createInsertSchema(quoteRequestAttachments).omit({
+export const insertQuoteRequestAttachmentSchema = createInsertSchema(
+  quoteRequestAttachments,
+).omit({
   id: true,
-  createdAt: true
+  createdAt: true,
 });
 
-export type QuoteRequestAttachment = typeof quoteRequestAttachments.$inferSelect;
-export type InsertQuoteRequestAttachment = z.infer<typeof insertQuoteRequestAttachmentSchema>;
+export type QuoteRequestAttachment =
+  typeof quoteRequestAttachments.$inferSelect;
+export type InsertQuoteRequestAttachment = z.infer<
+  typeof insertQuoteRequestAttachmentSchema
+>;
 
 // Define relations for quote requests and attachments
 export const quoteRequestsRelations = relations(quoteRequests, ({ many }) => ({
-  attachments: many(quoteRequestAttachments)
+  attachments: many(quoteRequestAttachments),
 }));
 
-export const quoteRequestAttachmentsRelations = relations(quoteRequestAttachments, ({ one }) => ({
-  quoteRequest: one(quoteRequests, {
-    fields: [quoteRequestAttachments.quoteRequestId],
-    references: [quoteRequests.id]
-  })
-}));
+export const quoteRequestAttachmentsRelations = relations(
+  quoteRequestAttachments,
+  ({ one }) => ({
+    quoteRequest: one(quoteRequests, {
+      fields: [quoteRequestAttachments.quoteRequestId],
+      references: [quoteRequests.id],
+    }),
+  }),
+);
 
 // Subcontractors table
 export const subcontractors = pgTable("subcontractors", {
@@ -406,11 +472,13 @@ export const subcontractors = pgTable("subcontractors", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const insertSubcontractorSchema = createInsertSchema(subcontractors).omit({
+export const insertSubcontractorSchema = createInsertSchema(
+  subcontractors,
+).omit({
   id: true,
   status: true,
   notes: true,
-  createdAt: true
+  createdAt: true,
 });
 
 // Vendors table
@@ -439,7 +507,7 @@ export const insertVendorSchema = createInsertSchema(vendors).omit({
   id: true,
   status: true,
   notes: true,
-  createdAt: true
+  createdAt: true,
 });
 
 export type Subcontractor = typeof subcontractors.$inferSelect;
@@ -499,6 +567,26 @@ export const insertTeamMemberSchema = createInsertSchema(teamMembers).omit({
 export type TeamMember = typeof teamMembers.$inferSelect;
 export type InsertTeamMember = z.infer<typeof insertTeamMemberSchema>;
 
+// Site Settings Schema
+export const siteSettings = pgTable("site_settings", {
+  id: serial("id").primaryKey(),
+  key: text("key").notNull().unique(),
+  value: text("value").notNull(),
+  category: text("category").notNull().default("general"),
+  label: text("label").notNull(),
+  description: text("description"),
+  type: text("type").notNull().default("text"), // text, number, boolean, json, etc.
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertSiteSettingsSchema = createInsertSchema(siteSettings).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export type SiteSetting = typeof siteSettings.$inferSelect;
+export type InsertSiteSetting = z.infer<typeof insertSiteSettingsSchema>;
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 
@@ -531,7 +619,9 @@ export interface SimpleBlogTag {
 
 export type BlogPost = typeof blogPosts.$inferSelect;
 export type InsertBlogPost = z.infer<typeof insertBlogPostSchema>;
-export type ExtendedInsertBlogPost = z.infer<typeof extendedInsertBlogPostSchema>;
+export type ExtendedInsertBlogPost = z.infer<
+  typeof extendedInsertBlogPostSchema
+>;
 export type BlogGallery = typeof blogGallery.$inferSelect;
 export type InsertBlogGallery = z.infer<typeof insertBlogGallerySchema>;
 
