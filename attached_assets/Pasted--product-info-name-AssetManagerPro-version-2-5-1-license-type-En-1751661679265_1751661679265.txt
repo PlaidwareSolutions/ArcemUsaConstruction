@@ -1,0 +1,92 @@
+{
+  "product_info": {
+    "name": "AssetManagerPro",
+    "version": "2.5.1",
+    "license_type": "Enterprise",
+    "customer_id": "cust_54823",
+    "instance_id": "inst_a1b2c3",
+    "timezone": "America/New_York",
+    "region": "us-east-1"
+  },
+  "system_health": {
+    "status": "healthy",
+    "uptime_seconds": 1234567,
+    "cpu_usage_percent": 47.3,
+    "memory_usage_percent": 68.9,
+    "disk_usage_percent": 75.4
+  },
+  "users": {
+    "total": 154,
+    "active_last_7_days": 96,
+    "active_last_30_days": 128,
+    "new_users_last_30_days": 14,
+    "user_login_summary": [
+      {
+        "user_id": "u102",
+        "email": "alice@acme.com",
+        "monthly_login_count": 10,
+        "last_login": "2025-07-03T15:12:00Z",
+        "inactive": false
+      },
+      {
+        "user_id": "u109",
+        "email": "john@acme.com",
+        "monthly_login_count": 1,
+        "last_login": "2025-05-18T08:45:00Z",
+        "inactive": true
+      }
+    ]
+  },
+  "feature_usage": {
+    "create_project": 82,
+    "generate_report": 121,
+    "export_csv": 67,
+    "integrations_connected": ["Slack", "GoogleDrive"]
+  },
+  "usage_entities": {
+    "assets": 1402,
+    "projects": 119,
+    "transactions": 6241,
+    "custom_entities": {
+      "tags": 212,
+      "notes": 412
+    }
+  },
+  "storage": {
+    "total_allocated_mb": 15000,
+    "used_mb": 9234,
+    "free_mb": 5766,
+    "monthly_data_ingested_mb": 780,
+    "monthly_data_egressed_mb": 124
+  },
+  "performance": {
+    "average_response_time_ms": 312,
+    "error_rate_percent": 0.42,
+    "api_5xx_count": 7,
+    "api_4xx_count": 92,
+    "peak_rps": 108
+  },
+  "security": {
+    "failed_login_attempts": 19,
+    "password_reset_requests": 8,
+    "account_lockouts": 2,
+    "last_admin_action": "2025-07-02T18:01:00Z"
+  },
+  "license": {
+    "expiry_date": "2025-12-31",
+    "current_usage_tier": "enterprise-unlimited",
+    "overage_flag": false,
+    "trial_remaining_days": 0,
+    "sla_uptime_percent": 99.96
+  },
+  "alerts_issues": {
+    "open_issues_count": 1,
+    "critical_alerts_last_7_days": 0,
+    "last_incident_datetime": "2025-06-23T02:40:00Z"
+  },
+  "custom_metadata": {
+    "tenant_type": "partner",
+    "tags": ["gov", "longterm"],
+    "admin_notes": "Key account with long-term retention requirement"
+  }
+}
