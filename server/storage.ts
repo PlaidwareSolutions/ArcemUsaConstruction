@@ -47,11 +47,7 @@ export interface IStorage {
   getProjects(): Promise<Project[]>;
   getProject(id: number): Promise<Project | undefined>;
   getFeaturedProjects(): Promise<Project[]>;
-
-
-  async getUsers(): Promise<User[]> {
-    return db.select().from(users);
-  }
+  getUsers(): Promise<User[]>;
 
   createProject(project: InsertProject): Promise<Project>;
   updateProject(id: number, project: Partial<InsertProject>): Promise<Project | undefined>;
