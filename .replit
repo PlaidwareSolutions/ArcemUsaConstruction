@@ -2,8 +2,9 @@ modules = ["nodejs-20", "bash", "web", "postgresql-16"]
 run = "npm run dev"
 
 [deployment]
-run = ["sh", "-c", "npm run dev"]
-deploymentTarget = "cloudrun"
+run = ["npm", "run", "start"]
+deploymentTarget = "autoscale"
+build = ["npm", "run", "build"]
 
 [nix]
 channel = "stable-24_05"
