@@ -5,6 +5,37 @@ import { createUploadthing } from "uploadthing/server";
 import { uploadRouter, createUploadthingExpressHandler } from "./uploadthing";
 import { setupAuth } from "./auth";
 import cookieParser from "cookie-parser";
+import { storage } from "./storage";
+import { scrypt, randomBytes } from "crypto";
+import { promisify } from "util";
+
+const scryptAsync = promisify(scrypt);
+
+async function hashPassword(password: string): Promise<string> {
+  const salt = randomBytes(16).toString("hex");
+  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+  return `${buf.toString("hex")}.${salt}`;
+}
+
+async function seedAdminUser() {
+  try {
+    const existingAdmin = await storage.getUserByUsername("admin");
+    if (!existingAdmin) {
+      const hashedPassword = await hashPassword("Admin123!");
+      await storage.createUser({
+        username: "admin",
+        password: hashedPassword,
+        role: "admin",
+        email: "admin@arcemusa.com"
+      });
+      log("Admin user created successfully");
+    } else {
+      log("Admin user already exists");
+    }
+  } catch (error) {
+    console.error("Error seeding admin user:", error);
+  }
+}
 
 // Set UploadThing environment variables
 if (!process.env.UPLOADTHING_SECRET || !process.env.UPLOADTHING_APP_ID) {
@@ -63,6 +94,7 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  await seedAdminUser();
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
