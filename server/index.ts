@@ -19,9 +19,16 @@ async function hashPassword(password: string): Promise<string> {
 
 async function seedAdminUser() {
   try {
+    const adminPassword = process.env.ADMIN_INITIAL_PASSWORD;
+    if (!adminPassword) {
+      log("ADMIN_INITIAL_PASSWORD not set, skipping admin seeding");
+      return;
+    }
+
+    const hashedPassword = await hashPassword(adminPassword);
     const existingAdmin = await storage.getUserByUsername("admin");
+    
     if (!existingAdmin) {
-      const hashedPassword = await hashPassword("Admin123!");
       await storage.createUser({
         username: "admin",
         password: hashedPassword,
@@ -30,7 +37,10 @@ async function seedAdminUser() {
       });
       log("Admin user created successfully");
     } else {
-      log("Admin user already exists");
+      await storage.updateUser(existingAdmin.id, {
+        password: hashedPassword
+      });
+      log("Admin user password updated successfully");
     }
   } catch (error) {
     console.error("Error seeding admin user:", error);
